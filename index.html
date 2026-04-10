@@ -750,11 +750,22 @@ async function initExtensionMode() {
     }
 
     if (token) {
+      console.log('[Dashboard] Token beschikbaar, lengte:', token.length);
       currentUser = parseJWT(token);
-      // In extensie modus: laad alle regio's
+      console.log('[Dashboard] User:', JSON.stringify(currentUser));
+
+      // Detecteer regio van huidig project
+      let tcProject = null;
+      try { tcProject = await tcAPI.project.getCurrentProject(); } catch(e) {}
+      const loc = (tcProject?.location || 'europe').toLowerCase();
+      let region = 'europe';
+      if (loc.includes('america') || loc.includes('north')) region = 'north america';
+      else if (loc.includes('asia')) region = 'asia';
+      console.log('[Dashboard] Project regio:', loc, '→', region);
+
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('loadingScreen').style.display = 'flex';
-      await loadAllProjects('all');
+      await loadAllProjects(region);
     } else {
       // Geen token: toon login scherm
       console.warn('[TC] Geen token in extensie modus, toon login scherm');
@@ -859,13 +870,9 @@ function startLoading() {
 //  API HELPERS
 // ============================================================
 function getApiUrl(region, endpoint) {
-  // Standalone: gebruik CORS proxy
-  if (!isEmbedded) {
-    const key = REGION_KEYS[region] || 'eu';
-    return `${PROXY_BASE}/tc/${key}/${endpoint.replace(/^\//, '')}`;
-  }
-  // Extensie: directe API call
-  return `${TC_REGIONS[region]}/${endpoint.replace(/^\//, '')}`;
+  // Altijd CORS proxy gebruiken (ook in extensie modus, want iframe origin is github.io)
+  const key = REGION_KEYS[region] || 'eu';
+  return `${PROXY_BASE}/tc/${key}/${endpoint.replace(/^\//, '')}`;
 }
 
 async function apiFetch(region, endpoint) {
