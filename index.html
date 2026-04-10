@@ -3,1981 +3,804 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Documentenlijst Viewer | At Fielt</title>
+<title>Trimble Connect - Project Dashboard | At Fielt</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAJZJREFUWEft1DEKwCAQRdHx/peOhYVFCi1cwEIS0E5m+PPrVTq5e/9e3T3T+34fp/tnJoCZBECSJEmSJEmSJGlJANd9v3rv+xGA+wSQJEmSJEmS/ncAz8eSJEmSJEmStCSA53NJkiRJkiRJSwJ4PpckSZIkSZK0JIDnc0mSJEmSJElLAng+lyRJkiRJkrQkgOdzSZIkSZL+ewBfYCl0Id3cvQAAAABJRU5ErkJggg==">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Poppins',-apple-system,sans-serif;background:#f9f9f9;color:#222;min-height:100vh}
-:root{--af:#d4821a;--af2:#ec5d0e;--afl:#fef5eb;--dk:#222;--gr:#f5f0ea;--ok:#2d6a4f;--okbg:#d4edda;--info:#004085;--infobg:#cce5ff;--warn:#c0392b}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif; background: #f9f9f9; color: #222; min-height: 100vh; }
+:root { --af-oranje: #d4821a; --af-oranje-hover: #ec5d0e; --af-oranje-licht: #fef5eb; --af-donker: #222; --af-grijs: #f5f0ea; }
 
-.hdr{background:var(--dk);color:#fff;padding:12px 24px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.15);position:sticky;top:0;z-index:100}
-.hdr h1{font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;white-space:nowrap}
-.hdr .sub{font-size:12px;opacity:.5;margin-left:4px}
-.hdr .info{font-size:12px;opacity:.7;margin-left:12px}
-.hdr .spacer{flex:1}
-.hdr .back-btn{padding:5px 14px;background:rgba(255,255,255,.12);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-family:'Poppins',sans-serif;display:none}
-.hdr .back-btn:hover{background:rgba(255,255,255,.2)}
-.hdr .action-btn{padding:5px 14px;background:var(--af);color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;display:none}
-.hdr .action-btn:hover{background:var(--af2)}
+/* === HEADER === */
+.header { background: var(--af-donker); color: white; padding: 14px 24px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); position: sticky; top: 0; z-index: 100; }
+.header h1 { font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 700; white-space: nowrap; }
+.header .brand { font-size: 12px; opacity: 0.5; margin-left: 4px; font-weight: 400; }
+.header .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.header .search-box { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 6px 12px; color: white; font-size: 13px; font-family: 'Poppins', sans-serif; width: 180px; outline: none; transition: all 0.2s; }
+.header .search-box::placeholder { color: rgba(255,255,255,0.4); }
+.header .search-box:focus { background: rgba(255,255,255,0.15); border-color: var(--af-oranje); width: 220px; }
+.header .project-count { background: var(--af-oranje); color: white; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.header .btn-logout, .header .btn-refresh { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: 'Poppins', sans-serif; transition: all 0.2s; }
+.header .btn-logout:hover, .header .btn-refresh:hover { border-color: white; color: white; }
+.btn-refresh { font-size: 15px !important; padding: 2px 8px !important; }
+.btn-refresh.spinning { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.btn-newtab { display: none; color: rgba(255,255,255,0.5); text-decoration: none; font-size: 14px; padding: 2px 6px; border-radius: 4px; transition: all 0.2s; }
+.btn-newtab:hover { color: white; background: rgba(255,255,255,0.1); }
 
-.page{display:none;min-height:calc(100vh - 48px)}
-.page.active{display:block}
-.page-flex.active{display:flex}
+/* === LOGIN SCHERM === */
+.login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 50px); padding: 40px; background: linear-gradient(180deg, white 0%, var(--af-grijs) 100%); }
+.login-card { background: white; border-radius: 14px; padding: 48px; max-width: 620px; width: 100%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.06); }
+.login-card h2 { font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--af-donker); }
+.login-card p { color: #666; font-size: 14px; margin-bottom: 24px; line-height: 1.5; }
+.steps-guide { text-align: left; margin-bottom: 24px; }
+.step-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+.step-item:last-child { border-bottom: none; }
+.step-num { background: var(--af-oranje); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; font-family: 'Montserrat', sans-serif; }
+.step-text { font-size: 13px; line-height: 1.5; color: #444; }
+.step-text a { color: var(--af-oranje); font-weight: 600; text-decoration: none; }
+.step-text a:hover { text-decoration: underline; }
+.step-text code { background: #f5f0ea; padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--af-donker); }
+.step-text .shortcut { display: inline-block; background: #eee; padding: 1px 8px; border-radius: 4px; font-size: 11px; font-family: 'Courier New', monospace; font-weight: 600; color: #555; border: 1px solid #ddd; }
+.login-card .token-input { width: 100%; padding: 14px 16px; border: 2px dashed #d0d0d0; border-radius: 10px; font-family: 'Courier New', monospace; font-size: 12px; resize: none; height: 56px; transition: all 0.2s; background: #fafafa; text-align: center; }
+.login-card .token-input:focus { outline: none; border-color: var(--af-oranje); border-style: solid; background: white; text-align: left; }
+.login-card .token-input.has-token { border-color: #4caf50; border-style: solid; background: #f1f8e9; color: #2e7d32; }
+.login-card .region-row { display: flex; gap: 12px; margin-top: 16px; }
+.login-card .region-select { flex: 1; padding: 10px 16px; border: 2px solid #e0e0e0; border-radius: 10px; font-family: 'Poppins', sans-serif; font-size: 14px; background: white; cursor: pointer; }
+.login-card .region-select:focus { outline: none; border-color: var(--af-oranje); }
+.login-card .btn-load { flex: 1; background: var(--af-oranje); color: white; border: none; padding: 10px 24px; border-radius: 10px; font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+.login-card .btn-load:hover { background: var(--af-oranje-hover); }
+.login-card .btn-load:disabled { background: #ccc; cursor: not-allowed; }
+.token-status { margin-top: 8px; font-size: 12px; color: #999; min-height: 18px; }
+.token-status.valid { color: #2e7d32; font-weight: 500; }
+.token-status.invalid { color: #c62828; }
 
-/* Upload */
-.pg-upload.active{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;background:linear-gradient(180deg,#fff 0%,var(--gr) 100%)}
-.ucard{background:#fff;border-radius:14px;padding:44px;max-width:600px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.06)}
-.ucard h2{font-family:'Montserrat',sans-serif;font-size:22px;margin-bottom:4px}
-.ucard .tag{color:var(--af);font-size:13px;font-weight:500;margin-bottom:16px}
-.ucard p{color:#666;margin-bottom:20px;font-size:14px}
-.dz{border:2px dashed #ccc;border-radius:12px;padding:24px;margin-bottom:12px;transition:.2s;cursor:pointer}
-.dz:hover,.dz.over{border-color:var(--af);background:var(--afl)}
-.dz .ic{font-size:36px;margin-bottom:6px}
-.dz label{color:var(--af);cursor:pointer;font-weight:600}
-input[type=file]{display:none}
-.go-btn{padding:12px 36px;background:var(--af);color:#fff;border:none;border-radius:40px;font-size:15px;font-weight:600;font-family:'Montserrat',sans-serif;cursor:pointer;opacity:.4;transition:.2s;box-shadow:0 10px 25px rgba(212,130,26,.3);margin-top:14px}
-.go-btn:not(:disabled){opacity:1}
-.go-btn:not(:disabled):hover{background:var(--af2)}
-.up-group{text-align:left;margin:12px 0;padding:14px;background:#f8f9fa;border-radius:8px}
-.up-group h3{font-size:13px;font-weight:600;margin-bottom:4px}
-.up-group .st{font-size:12px;color:#666}
-.up-group .st.ok{color:var(--ok);font-weight:500}
-.disc{margin-top:16px;padding:12px;background:#fff8f0;border:1px solid #f0dcc8;border-radius:8px;font-size:11px;color:#8a6d3b;text-align:left;line-height:1.6}
+/* === LOADING SCHERM === */
+.loading-screen { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 50px); padding: 40px; background: linear-gradient(180deg, white 0%, var(--af-grijs) 100%); }
+.loading-card { background: white; border-radius: 14px; padding: 48px; max-width: 500px; width: 100%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.06); }
+.loading-card h3 { font-family: 'Montserrat', sans-serif; font-size: 18px; margin-bottom: 24px; }
+.loading-steps { text-align: left; margin: 20px 0; }
+.loading-steps .step { padding: 8px 0; font-size: 14px; opacity: 0.4; transition: opacity 0.3s; }
+.loading-steps .step.active { opacity: 1; }
+.loading-steps .step.done { opacity: 0.8; }
+.progress-bar { width: 100%; height: 6px; background: #eee; border-radius: 3px; margin: 16px 0 8px; display: none; overflow: hidden; }
+.progress-bar .fill { height: 100%; background: var(--af-oranje); border-radius: 3px; transition: width 0.3s; width: 0%; }
+.progress-info { display: flex; justify-content: space-between; font-size: 11px; color: #999; }
+.loading-error { display: none; margin-top: 16px; padding: 12px; background: #fff3f3; border: 1px solid #ffcdd2; border-radius: 8px; font-size: 13px; color: #c62828; text-align: left; }
+.btn-fallback { display: none; margin-top: 12px; background: transparent; border: 1px solid var(--af-oranje); color: var(--af-oranje); padding: 8px 20px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 13px; }
+.btn-fallback:hover { background: var(--af-oranje-licht); }
 
-/* TC Loading */
-.pg-loading.active{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;background:linear-gradient(180deg,#fff 0%,var(--gr) 100%)}
-.load-card{background:#fff;border-radius:14px;padding:44px;max-width:500px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.06)}
-.load-step{text-align:left;padding:8px 0;font-size:13px;opacity:.4}
-.load-step.active{opacity:1}
-.progress-track{width:100%;height:8px;background:#f0ebe5;border-radius:4px;margin:16px 0 8px;overflow:hidden;display:none}
-.progress-fill{height:100%;background:var(--af);border-radius:4px;transition:width .3s}
+/* === DASHBOARD === */
+.dashboard { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
+.stats-row { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.stat-card { background: white; border-radius: 12px; padding: 20px 24px; flex: 1; min-width: 140px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 2px solid #eee; cursor: pointer; transition: all 0.2s; }
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.stat-card:active { transform: translateY(0); }
+.stat-card.active-filter { border-color: var(--af-oranje); }
+.stat-card .stat-value { font-family: 'Montserrat', sans-serif; font-size: 28px; font-weight: 800; color: var(--af-donker); }
+.stat-card .stat-label { font-size: 12px; color: #888; margin-top: 4px; }
+.stat-card.highlight .stat-value { color: var(--af-oranje); }
 
-/* Dashboard */
-.pg-dash{padding:24px;overflow-y:auto;background:var(--gr)}
-.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:20px}
-.dcard{background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-.dcard h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#888;margin-bottom:12px;font-family:'Montserrat',sans-serif}
-.big-stats{display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap}
-.bstat{background:#fff;border-radius:12px;padding:20px 24px;box-shadow:0 2px 8px rgba(0,0,0,.04);min-width:140px;flex:1}
-.bstat .lab{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.3px;font-family:'Montserrat',sans-serif}
-.bstat .val{font-size:28px;font-weight:800;font-family:'Montserrat',sans-serif;margin-top:2px}
-.donut-wrap{display:flex;align-items:center;gap:16px}
-.donut{width:80px;height:80px;border-radius:50%;position:relative;flex-shrink:0}
-.donut-c{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:46px;height:46px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;font-family:'Montserrat',sans-serif}
-.donut-leg{font-size:12px;line-height:2}
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
-.bar-r{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px}
-.bar-l{width:110px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#555}
-.bar-t{flex:1;height:18px;background:#f0ebe5;border-radius:9px;overflow:hidden}
-.bar-f{height:100%;border-radius:9px;transition:width .3s;min-width:2px}
-.bar-c{width:30px;font-weight:600;color:#555}
-.veld-card{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid #f0f0f0}
-.veld-card:last-child{border:none}
-.veld-ring{width:50px;height:50px;border-radius:50%;position:relative;flex-shrink:0}
-.veld-ring-c{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-family:'Montserrat',sans-serif}
-.veld-info{flex:1}
-.veld-naam{font-weight:600;font-size:13px}
-.veld-detail{font-size:11px;color:#888;margin-top:2px}
-.veld-bar{width:100%;height:6px;background:#f0ebe5;border-radius:3px;margin-top:4px;overflow:hidden}
-.veld-fill{height:100%;border-radius:3px}
-.nav-btn{display:block;width:100%;padding:14px;background:var(--af);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif;text-align:center;margin-top:8px}
-.nav-btn:hover{background:var(--af2)}
-.nav-btn.sec{background:#fff;color:var(--dk);border:1px solid #ddd}
-.nav-btn.sec:hover{border-color:var(--af);color:var(--af)}
+/* Filters */
+.filters-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+.filter-toggle { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #666; cursor: pointer; user-select: none; }
+.filter-toggle input[type="checkbox"] { accent-color: var(--af-oranje); width: 16px; height: 16px; }
+.sort-info { margin-left: auto; font-size: 12px; color: #999; }
+.btn-export { background: var(--af-oranje); color: white; border: none; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; transition: background 0.2s; margin-left: 8px; }
+.btn-export:hover { background: var(--af-oranje-hover); }
 
-/* Documenten */
-.pg-docs{height:calc(100vh - 48px)}
-.sidebar{width:280px;background:#fff;border-right:1px solid #e8e0d8;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
-.sb-sec{padding:10px 12px;border-bottom:1px solid #eee}
-.sb-sec h3{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#888;margin-bottom:6px;font-family:'Montserrat',sans-serif}
-.sbox{width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;font-family:'Poppins',sans-serif;outline:none}
-.sbox:focus{border-color:var(--af)}
-.frow{display:flex;gap:3px;margin-top:4px}
-.frow select{flex:1;padding:4px 4px;border:1px solid #ddd;border-radius:6px;font-size:10px;font-family:'Poppins',sans-serif;outline:none;min-width:0;overflow:hidden;text-overflow:ellipsis}
-.tree{flex:1;overflow-y:auto;padding:4px 6px}
-.tr-row{display:flex;align-items:center;padding:4px 6px;border-radius:5px;cursor:pointer;transition:background .1s;gap:3px;font-size:12px;margin-bottom:1px}
-.tr-row:hover{background:var(--gr)}
-.tr-row.act{background:var(--afl);color:var(--af);font-weight:600}
-.tr-tog{width:14px;text-align:center;font-size:8px;color:#999;flex-shrink:0;cursor:pointer;transition:transform .15s}
-.tr-tog.open{transform:rotate(90deg)}
-.tr-ico{font-size:13px;flex-shrink:0}
-.tr-nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tr-cnt{font-size:10px;background:#eee;color:#666;padding:1px 5px;border-radius:8px;flex-shrink:0}
-.tr-row.act .tr-cnt{background:var(--af);color:#fff}
-.tr-ch{margin-left:14px;overflow:hidden}
-.tr-ch.hide{display:none}
+/* Tabel */
+.project-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #eee; }
+.project-table thead th { background: #fafafa; padding: 12px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; user-select: none; white-space: nowrap; border-bottom: 2px solid #eee; transition: color 0.2s; }
+.project-table thead th:hover { color: var(--af-oranje); }
+.project-table thead th .sort-arrow { display: inline-block; margin-left: 3px; font-size: 10px; opacity: 0.3; }
+.project-table thead th.sorted .sort-arrow { opacity: 1; color: var(--af-oranje); }
+.project-table tbody tr { border-bottom: 1px solid #f0f0f0; transition: background 0.15s; }
+.project-table tbody tr:hover { background: var(--af-oranje-licht); }
+.project-table tbody tr:last-child { border-bottom: none; }
+.project-table tbody td { padding: 10px 12px; font-size: 13px; }
+.project-table tbody tr.current-project { border-left: 4px solid var(--af-oranje); background: var(--af-oranje-licht); }
 
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.tbl-wrap{flex:1;display:flex;overflow:hidden}
-.tbl-scrl{flex:1;overflow:auto}
-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
-thead{position:sticky;top:0;z-index:10}
-thead th{background:var(--dk);color:#fff;padding:8px 8px;text-align:left;font-weight:600;font-size:11px;white-space:nowrap;cursor:pointer;user-select:none;position:relative}
-thead th:hover{background:#333}
-thead th .col-resize{position:absolute;right:0;top:0;width:5px;height:100%;cursor:col-resize;z-index:2}
-thead th .sa{margin-left:3px;opacity:.3;font-size:8px}
-thead th.sorted .sa{opacity:1;color:var(--af)}
-tbody tr{border-bottom:1px solid #f0f0f0;transition:background .1s;cursor:pointer}
-tbody tr:hover{background:var(--afl)}
-tbody tr.sel{background:#fff3e0}
-tbody tr.mn1{background:#FFC000}
-tbody tr.mn1 td{font-weight:700;font-size:13px;border-bottom:2px solid #d4a000;color:#553600;padding:8px 10px}
-tbody tr.mn2{background:#FFFF00}
-tbody tr.mn2 td{font-weight:600;font-size:12px;border-bottom:1px solid #d4d400;color:#555500}
-tbody tr.mn3{background:#FFF8E1}
-tbody tr.mn3 td{font-weight:500;font-size:11px;color:#8B7500;border-bottom:1px solid #f0e8c0}
-tbody tr.mn-meta{background:#f0ebe5}
-tbody tr.mn-meta td{font-weight:700;font-size:12px;border-bottom:2px solid #d4c8b0;color:#555;padding:8px 10px}
-td{padding:6px 8px;vertical-align:top}
-td a{color:var(--af);text-decoration:none}
-td a:hover{text-decoration:underline}
-.bdg{display:inline-block;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600;white-space:nowrap}
-.b-def{background:var(--okbg);color:var(--ok)}
-.b-uit{background:var(--infobg);color:var(--info)}
-.b-con{background:#eee;color:#888}
-.b-ver{background:#fde8e8;color:var(--warn)}
-.b-ov{background:#f0f0f0;color:#666}
-.no-r{padding:40px;text-align:center;color:#999;font-size:14px}
+/* Favorieten */
+.fav-cell { cursor: pointer; color: #ddd; font-size: 18px; text-align: center; width: 36px; transition: color 0.15s; }
+.fav-cell:hover { color: var(--af-oranje); }
+.fav-cell.active { color: var(--af-oranje); }
 
-.dpan{width:300px;background:#fff;border-left:1px solid #e8e0d8;overflow-y:auto;display:none;flex-direction:column;flex-shrink:0}
-.dpan.vis{display:flex}
-.dp-hd{padding:14px 16px;border-bottom:1px solid #eee;background:var(--gr)}
-.dp-hd h3{font-size:13px;font-weight:600;font-family:'Montserrat',sans-serif;word-break:break-all}
-.dp-hd .dp-path{font-size:11px;color:#888;margin-top:3px;word-break:break-all}
-.dp-sec{padding:10px 16px;border-bottom:1px solid #f0f0f0}
-.dp-sec h4{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#888;margin:0 0 6px;font-family:'Montserrat',sans-serif}
-.dp-row{display:flex;justify-content:space-between;padding:3px 0;font-size:11px}
-.dp-row .dl{color:#888}
-.dp-row .dv{font-weight:500;text-align:right;max-width:160px;word-break:break-all}
-.dp-tc{display:block;margin:10px 16px;padding:10px;background:var(--af);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;font-family:'Poppins',sans-serif}
-.dp-tc:hover{background:var(--af2)}
-.modal-bg{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center}
-.modal-bg.vis{display:flex}
-.modal{background:#fff;border-radius:14px;padding:28px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.15)}
-.modal h3{font-family:'Montserrat',sans-serif;font-size:16px;margin:0 0 16px}
-.modal label{display:block;font-size:11px;font-weight:600;color:#888;margin:12px 0 4px;text-transform:uppercase;letter-spacing:.3px}
-.modal input,.modal textarea,.modal select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:'Poppins',sans-serif;box-sizing:border-box}
-.modal textarea{height:80px;resize:vertical}
-.modal .file-list{background:#f8f9fa;border-radius:6px;padding:8px 12px;font-size:11px;color:#555;max-height:100px;overflow-y:auto;margin-bottom:4px}
-.modal .btn-row{display:flex;gap:8px;margin-top:16px}
-.modal .btn-primary{flex:1;padding:10px;background:var(--af);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif}
-.modal .btn-primary:hover{background:var(--af2)}
-.modal .btn-secondary{padding:10px 16px;background:#f0f0f0;color:#555;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif}
-.modal .success-box{text-align:center;padding:20px 0}
-.modal .success-box .ic{font-size:48px;margin-bottom:8px}
-.modal .link-box{background:#f8f9fa;border-radius:6px;padding:10px;font-size:12px;word-break:break-all;margin:8px 0}
-.dp-preview{padding:10px 16px;border-bottom:1px solid #f0f0f0}
-.dp-preview h4{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#888;margin:0 0 8px;font-family:'Montserrat',sans-serif}
-.dp-preview iframe,.dp-preview img{width:100%;border-radius:6px;border:1px solid #e8e0d8;background:#f9f9f9}
-.dp-preview iframe{height:320px}
-.dp-preview img{max-height:320px;object-fit:contain}
-.dp-preview .no-prev{font-size:11px;color:#aaa;text-align:center;padding:20px 0}
-.ftr{padding:5px 20px;background:#fff;border-top:1px solid #eee;font-size:11px;color:#999;display:flex;justify-content:space-between}
+/* Project naam link */
+.project-link { color: var(--af-donker); text-decoration: none; font-weight: 500; transition: color 0.2s; position: relative; }
+.project-link:hover { color: var(--af-oranje); }
+/* Tooltip */
+.project-link[data-tooltip]:hover::after { content: attr(data-tooltip); position: absolute; left: 0; top: 100%; background: var(--af-donker); color: white; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 400; max-width: 280px; white-space: normal; z-index: 200; margin-top: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); line-height: 1.4; pointer-events: none; }
+
+/* Badges */
+.badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+.badge-admin { background: var(--af-oranje); color: white; }
+.badge-user { background: #eee; color: #888; }
+.badge-loading { background: #f5f5f5; color: #bbb; font-style: italic; text-transform: none; }
+.badge-region { background: #e8f0fe; color: #1967d2; font-size: 10px; padding: 2px 8px; }
+.badge-current { background: var(--af-oranje); color: white; font-size: 9px; padding: 1px 6px; border-radius: 8px; margin-left: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+
+.date-cell { color: #888; font-size: 12px; }
+.date-cell.recent { color: var(--af-oranje); font-weight: 500; }
+.members-cell { font-variant-numeric: tabular-nums; }
+.col-region { }
+
+.empty-state { text-align: center; padding: 60px 20px; color: #999; }
+.empty-state h3 { font-family: 'Montserrat', sans-serif; margin-bottom: 8px; color: #666; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard { padding: 12px; }
+  .stats-row { gap: 8px; }
+  .stat-card { padding: 14px; min-width: 100px; }
+  .stat-card .stat-value { font-size: 22px; }
+  .header .search-box { width: 120px; }
+  .header .search-box:focus { width: 160px; }
+}
+
+/* Sidebar modus (TC extensie in smal paneel) */
+body.sidebar-mode .dashboard { padding: 12px 8px; }
+body.sidebar-mode .stats-row { gap: 6px; }
+body.sidebar-mode .stat-card { padding: 10px 12px; min-width: 70px; }
+body.sidebar-mode .stat-card .stat-value { font-size: 20px; }
+body.sidebar-mode .stat-card .stat-label { font-size: 10px; }
+body.sidebar-mode .header { padding: 10px 12px; gap: 6px; }
+body.sidebar-mode .header h1 { font-size: 13px; }
+body.sidebar-mode .header .search-box { width: 100px; font-size: 12px; }
+body.sidebar-mode .header .search-box:focus { width: 130px; }
+body.sidebar-mode .project-table thead th, body.sidebar-mode .project-table tbody td { padding: 8px 6px; font-size: 11px; }
+body.sidebar-mode .project-link { display: inline-block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+body.sidebar-mode .col-region { display: none; }
+body.sidebar-mode .th-region { display: none; }
+body.sidebar-mode .fav-cell { font-size: 14px; width: 28px; }
+body.sidebar-mode .filters-row { gap: 6px; font-size: 11px; }
+body.sidebar-mode .badge { font-size: 9px; padding: 2px 6px; }
+body.sidebar-mode .badge-current { font-size: 8px; }
+body.sidebar-mode .btn-export { font-size: 10px; padding: 3px 8px; }
 </style>
 </head>
 <body>
 
-<div class="hdr">
-  <h1>Trimble Connect <span class="sub">Documentenlijst</span></h1>
-  <span class="info" id="hdrInfo"></span>
-  <span class="spacer"></span>
-  <button class="back-btn" id="backBtn" onclick="goBack()">&#8592; Terug</button>
-  <button class="back-btn" id="relBtn" onclick="toonReleases()" style="display:none">&#128230; Releases</button>
-  <button class="action-btn" id="shareBtn" onclick="openShareDialog()" style="display:none">&#128228; Delen</button>
-  <button class="action-btn" id="editBtn" onclick="toggleEditMode()" style="display:none">&#128274; Bewerken</button>
-  <button class="action-btn" id="zipBtn" onclick="downloadZIP()" style="display:none">&#128230; ZIP</button>
-  <button class="action-btn" id="csvBtn" onclick="exportCSV()">&#11015; CSV</button>
-</div>
-
-<!-- TC LOADING -->
-<div class="page pg-loading active" id="pgLoading">
-  <div class="load-card">
-    <h2>Documentenlijst laden</h2>
-    <div class="tag" style="color:var(--af);font-size:13px;font-weight:500;margin:4px 0 20px" id="tcProjectName"></div>
-    <div id="tcStep1" class="load-step active">&#9203; Verbinden met Trimble Connect...</div>
-    <div id="tcStep2" class="load-step">&#9744; Mappenstructuur ophalen</div>
-    <div id="tcStep3" class="load-step">&#9744; Bestanden ophalen</div>
-    <div id="tcStep4" class="load-step">&#9744; Metadata ophalen</div>
-    <div class="progress-track" id="tcProgress"><div class="progress-fill" id="tcProgressFill"></div></div>
-    <div id="tcStatusText" style="font-size:12px;color:#888;margin-top:8px"></div>
-    <div id="tcError" style="display:none;margin-top:16px;padding:12px;background:#fde8e8;border-radius:8px;color:var(--warn);font-size:12px;text-align:left"></div>
-    <div class="disc" style="margin-top:20px"><b>Powered by At Fielt</b> — Alle data wordt live opgehaald uit Trimble Connect. Er worden geen gegevens opgeslagen. Links verwijzen altijd naar de laatste versie van het bestand.</div>
+<!-- HEADER -->
+<div class="header">
+  <h1>Project Dashboard <span class="brand">At Fielt</span></h1>
+  <a href="https://tomtietom.github.io/trimble-project-dashboard/" target="_blank" class="btn-newtab" id="btnNewTab" title="Open in volledig scherm">&#x2197;</a>
+  <div class="header-right" id="headerRight" style="display:none;">
+    <button class="btn-refresh" onclick="refreshData()" title="Ververs projecten">&#x21bb;</button>
+    <input type="text" class="search-box" id="searchBox" placeholder="Zoek project..." oninput="filterProjects()">
+    <span class="project-count" id="projectCount">0</span>
+    <button class="btn-logout" onclick="logout()">Uitloggen</button>
   </div>
 </div>
 
-<!-- STANDALONE (niet in TC) -->
-<div class="page pg-upload" id="pgUpload">
-  <div class="ucard">
-    <h2>Documentenlijst Viewer</h2>
-    <div class="tag">Powered by At Fielt</div>
-    <p>Open deze viewer vanuit Trimble Connect.</p>
+<!-- LOGIN SCHERM -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h2>Trimble Connect Dashboard</h2>
+    <p>Bekijk al je projecten in een overzicht. In 3 stappen klaar:</p>
+    <div class="steps-guide">
+      <div class="step-item"><span class="step-num">1</span><div class="step-text">Open <a href="https://web.connect.trimble.com/projects" target="_blank">Trimble Connect</a> en log in</div></div>
+      <div class="step-item"><span class="step-num">2</span><div class="step-text">Druk <span class="shortcut">F12</span> &rarr; <strong>Network</strong> tab &rarr; herlaad (<span class="shortcut">F5</span>)</div></div>
+      <div class="step-item"><span class="step-num">3</span><div class="step-text">Klik op een request (bijv. <code>projects</code>) &rarr; kopieer de tekst achter <code>Authorization: Bearer</code></div></div>
+    </div>
+    <textarea class="token-input" id="tokenInput" placeholder="Plak je token hier (Ctrl+V)..." oninput="onTokenInput()"></textarea>
+    <div class="token-status" id="tokenStatus"></div>
+    <div class="region-row">
+      <select class="region-select" id="regionSelect">
+        <option value="all">Alle regio's</option>
+        <option value="europe" selected>Europa</option>
+        <option value="north america">Noord-Amerika</option>
+        <option value="asia">Azie</option>
+      </select>
+      <button class="btn-load" id="btnLoad" onclick="startLoading()" disabled>Laden</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING SCHERM -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-card">
+    <h3>Projecten laden...</h3>
+    <div class="loading-steps">
+      <div class="step active" id="step1">&#9203; Verbinding maken...</div>
+      <div class="step" id="step2">&#9744; Projecten ophalen...</div>
+      <div class="step" id="step3">&#9744; Rollen controleren...</div>
+    </div>
+    <div class="progress-bar" id="progressBar"><div class="fill" id="progressFill"></div></div>
+    <div class="progress-info"><span id="progressPct"></span><span id="progressEta"></span></div>
+    <div class="loading-error" id="loadingError"></div>
+    <button class="btn-fallback" id="btnFallback" onclick="backToLogin()">Terug naar inloggen</button>
   </div>
 </div>
 
 <!-- DASHBOARD -->
-<div class="page pg-dash" id="pgDash"><div id="dashContent"></div></div>
-
-<!-- RELEASES -->
-<div class="page pg-dash" id="pgRel"><div id="relContent"></div></div>
-
-<!-- DOCUMENTEN -->
-<div class="page page-flex pg-docs" id="pgDocs">
-  <div class="sidebar">
-    <div class="sb-sec">
-      <input type="text" class="sbox" id="searchBox" placeholder="Zoek op naam, nummer, titel...">
-      <div id="filterRows"></div>
-      <div class="frow" style="margin-top:6px">
-        <select id="fMetaFilter" onchange="renderT()" style="font-size:10px;padding:2px 4px;border:1px solid #ddd;border-radius:4px;font-family:Poppins,sans-serif;color:#555;flex:1">
-          <option value="">Alle documenten</option>
-          <option value="with">Alleen met metadata</option>
-          <option value="without">Alleen zonder metadata</option>
-          <option value="incomplete">Verplichte metadata incompleet</option>
-        </select>
-        <select id="fRelease" onchange="renderT()" style="font-size:10px;padding:2px 4px;border:1px solid #ddd;border-radius:4px;font-family:Poppins,sans-serif;color:#555;flex:1"></select>
-      </div>
-      <div class="frow" style="margin-top:4px">
-        <span style="flex:1"></span>
-        <button onclick="resetFilters()" style="font-size:10px;padding:2px 8px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;font-family:Poppins,sans-serif;color:#888">Reset filters</button>
-      </div>
-      <div class="frow" style="margin-top:4px">
-        <select id="fGroep" onchange="renderT()" style="flex:1;font-weight:600"></select>
-      </div>
+<div class="dashboard" id="dashboard">
+  <div class="stats-row">
+    <div class="stat-card" onclick="clearAllFilters()" title="Wis alle filters">
+      <div class="stat-value" id="statTotal">0</div>
+      <div class="stat-label">Projecten</div>
     </div>
-    <div class="sb-sec" id="colSec">
-      <h3 style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="document.getElementById('colList').style.display=document.getElementById('colList').style.display==='none'?'block':'none'">Kolommen <span style="font-size:9px;opacity:.5">&#9660;</span></h3>
-      <div id="colList" style="display:none;margin-top:6px">
-        <div id="colChecks"></div>
-        <div style="display:flex;gap:4px;margin-top:6px">
-          <button onclick="addMetaCol()" style="flex:1;padding:3px 6px;font-size:10px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;font-family:'Poppins',sans-serif">+ Metadata</button>
-        </div>
-      </div>
+    <div class="stat-card highlight" id="statAdminCard" onclick="toggleAdminFilter()" title="Filter op admin">
+      <div class="stat-value" id="statAdmin">0</div>
+      <div class="stat-label">Admin</div>
     </div>
-    <div class="sb-sec"><h3>Mappen</h3></div>
-    <div class="tree" id="treeList"></div>
-  </div>
-  <div class="main">
-    <div id="editBar" style="display:none;padding:6px 12px;background:#fff8f0;border-bottom:1px solid #f0dcc8;font-size:12px;align-items:center;gap:10px">
-      <span id="editSelCount" style="font-weight:600;color:var(--af)"></span>
-      <select id="bulkField" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px"></select>
-      <select id="bulkValue" style="padding:3px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px;max-width:160px"></select>
-      <button onclick="bulkSave()" style="padding:3px 10px;background:var(--af);color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer">Toepassen</button>
-      <span id="bulkStatus" style="font-size:11px;color:#888"></span>
-    </div>
-    <div class="tbl-wrap">
-      <div class="tbl-scrl"><table><thead id="tHead"></thead><tbody id="tBody"></tbody></table><div class="no-r" id="noR" style="display:none">Geen documenten gevonden</div></div>
-      <div class="dpan" id="dPan"><div class="dp-hd" id="dpHd"><div style="display:flex;justify-content:space-between;align-items:start"><h3></h3><span onclick="document.getElementById('dPan').classList.remove('vis');selDoc=null;renderT();" style="cursor:pointer;font-size:18px;opacity:.5;padding:0 4px" title="Sluiten">&times;</span></div><div class="dp-path"></div></div><div id="dpCnt"></div></div>
-    </div>
-    <div class="ftr"><span id="ftr1"></span><span style="font-weight:600;color:var(--af)">&#128279; Links openen altijd de laatste versie</span><span id="ftr2"></span></div>
-  </div>
-</div>
-
-<!-- DEEL MODAL -->
-<div class="modal-bg" id="shareModal">
-  <div class="modal">
-    <div id="shareForm">
-      <h3>&#128228; Documenten delen</h3>
-      <div class="file-list" id="shareFileList"></div>
-      <label>Email ontvangers (optioneel, komma-gescheiden)</label>
-      <input type="text" id="shareEmails" placeholder="naam@bedrijf.nl — leeg laten = alleen link maken">
-      <label>Bericht</label>
-      <textarea id="shareMsg" placeholder="Optioneel bericht..." maxlength="1024"></textarea>
-      <div style="display:flex;gap:12px">
-        <div style="flex:1"><label>Delen met</label>
-          <select id="shareMode" onchange="updateShareModeInfo()">
-            <option value="REGISTERED_USERS">Ingelogde gebruikers (aanbevolen)</option>
-            <option value="PUBLIC">Elke gebruiker met de link</option>
-            <option value="PROJECT_USERS">Alleen projectleden</option>
-          </select>
-        </div>
-        <div style="flex:1"><label>Toestemming</label><select id="sharePerm"><option value="VIEW">Bekijken</option><option value="DOWNLOAD">Downloaden</option></select></div>
-      </div>
-      <div style="display:flex;gap:12px">
-        <div style="flex:1"><label>Vervaldatum</label><input type="date" id="shareExpiry"></div>
-      </div>
-      <div id="shareModeInfo" style="font-size:10px;padding:6px 8px;border-radius:4px;margin-top:4px;background:#cce5ff;color:#004085">Ontvanger moet inloggen met Trimble ID. Toegang wordt gelogd.</div>
-      <div class="btn-row">
-        <button class="btn-secondary" onclick="closeShareDialog()">Annuleren</button>
-        <button class="btn-primary" id="shareSubmitBtn" onclick="sendShare('email')">&#9993; Via eigen email</button>
-        <button class="btn-primary" id="shareTcBtn" onclick="sendShare('tc')" style="background:var(--info)">&#128228; Via Trimble Connect</button>
-      </div>
-    </div>
-    <div id="shareSuccess" style="display:none">
-      <div class="success-box">
-        <div class="ic">&#9989;</div>
-        <h3>Gedeeld!</h3>
-        <p id="shareSuccessMsg" style="font-size:13px;color:#666"></p>
-      </div>
-      <div class="link-box" id="shareLink"></div>
-      <div class="btn-row">
-        <button class="btn-secondary" onclick="copyShareLink()">&#128203; Kopieer</button>
-        <button class="btn-secondary" onclick="openShareInMail()">&#9993; Open in email</button>
-        <button class="btn-primary" onclick="closeShareDialog()">Sluiten</button>
-      </div>
+    <div class="stat-card" onclick="sortBy('members')" title="Sorteer op leden">
+      <div class="stat-value" id="statMembers">0</div>
+      <div class="stat-label">Totaal leden</div>
     </div>
   </div>
+
+  <div class="filters-row">
+    <label class="filter-toggle"><input type="checkbox" id="filterFavorites" onchange="filterProjects()"> Alleen favorieten</label>
+    <label class="filter-toggle"><input type="checkbox" id="filterAdmin" onchange="filterProjects()"> Alleen admin</label>
+    <span class="sort-info" id="sortInfo">Sorteer: Activiteit (nieuwste eerst)</span>
+    <button class="btn-export" onclick="exportToExcel()" title="Exporteer naar Excel">Excel</button>
+  </div>
+
+  <table class="project-table" id="projectTable">
+    <thead>
+      <tr>
+        <th onclick="sortBy('favorite')" style="width:36px">&#9733; <span class="sort-arrow" id="sortFavorite">&#9650;</span></th>
+        <th onclick="sortBy('name')">Projectnaam <span class="sort-arrow" id="sortName">&#9650;</span></th>
+        <th onclick="sortBy('role')">Rol <span class="sort-arrow" id="sortRole">&#9650;</span></th>
+        <th onclick="sortBy('members')">Leden <span class="sort-arrow" id="sortMembers">&#9650;</span></th>
+        <th onclick="sortBy('activity')">Activiteit <span class="sort-arrow" id="sortActivity">&#9660;</span></th>
+        <th onclick="sortBy('region')" class="th-region">Regio <span class="sort-arrow" id="sortRegion">&#9650;</span></th>
+      </tr>
+    </thead>
+    <tbody id="projectBody"></tbody>
+  </table>
+  <div class="empty-state" id="emptyState" style="display:none;"><h3>Geen projecten gevonden</h3><p>Pas je zoekopdracht of filter aan.</p></div>
 </div>
 
 <script>
-// === STATE ===
-let docs=[], mapS={}, pid='', actMap=null, sortK='file_location', sortD='asc', selDoc=null, curPage='pgLoading';
-let tcAPI=null, tcProject=null, tcToken='', isEmbedded=false;
-let editMode=false, selectedDocs=new Set();
-var releases=[], releaseMap={}; // releaseMap: { fileId: ['Release naam',...] }
-var PROP_MAP = {};
+// ============================================================
+//  GLOBALE STATE
+// ============================================================
+let token = null;
+let currentUser = null;
+let projects = [];
+let sortColumn = 'activity';
+let sortAsc = false;
+let isEmbedded = false;
+let tcAPI = null;
+let currentProjectId = null;
+let favorites = new Set();
+let isLoading = false;
+let lastRegion = 'europe';
 
-const TC_API_REGIONS = { europe:'https://app21.connect.trimble.com/tc/api/2.0', 'north america':'https://app.connect.trimble.com/tc/api/2.0', asia:'https://app31.connect.trimble.com/tc/api/2.0' };
 const PROXY_BASE = 'https://tc-proxy.tom-da0.workers.dev';
-const PSET_PROXY = PROXY_BASE + '/pset';
-const PSET_REGIONS = { europe: PSET_PROXY + '/eu', 'north america': PSET_PROXY + '/us', asia: PSET_PROXY + '/ap' };
-let TC_BASE = TC_API_REGIONS.europe;
-let PSET_BASE = PSET_REGIONS.europe;
+const TC_REGIONS = { 'europe': 'https://app21.connect.trimble.com/tc/api/2.0', 'north america': 'https://app.connect.trimble.com/tc/api/2.0', 'asia': 'https://app31.connect.trimble.com/tc/api/2.0' };
+const REGION_KEYS = { 'europe': 'eu', 'north america': 'us', 'asia': 'ap' };
+const REGION_LABELS = { 'europe': 'EU', 'north america': 'NA', 'asia': 'AP' };
 
-const VERPLICHT = ['document_status','discipline','project_fase','document_datum'];
-const VERPLICHT_LABEL = {'document_status':'Document status','discipline':'Discipline','project_fase':'Project fase','document_datum':'Document datum'};
-const STATUS_KLEUR = {'Definitief':'var(--ok)','Voor uitvoering':'var(--info)','Concept':'#888','Vervallen':'var(--warn)'};
-
-// === KOLOM CONFIGURATIE ===
-const ALL_COLS = [
-  {k:'bestandsnaam',l:'Bestandsnaam',w:'20%',fixed:true},
-  {k:'document_nummer',l:'Doc.nr',w:'8%'},
-  {k:'bouwdeel',l:'Bouwdeel',w:'7%'},
-  {k:'titel',l:'Omschrijving',w:'15%'},
-  {k:'discipline',l:'Discipline',w:'8%'},
-  {k:'bedrijf',l:'Bedrijf',w:'8%'},
-  {k:'project_fase',l:'Fase',w:'10%'},
-  {k:'revisie',l:'Rev.',w:'4%'},
-  {k:'document_datum',l:'Datum',w:'7%'},
-  {k:'document_status',l:'Status',w:'8%'},
-  {k:'_versie',l:'Versie',w:'4%'},
-  {k:'_releases',l:'Release',w:'8%'},
-  {k:'_gedeeld',l:'Gedeeld',w:'6%'},
-  {k:'_created',l:'Toegevoegd',w:'7%'},
-  {k:'document_soort',l:'Document soort',w:'8%'},
-  {k:'tags',l:'Tags',w:'8%'},
-  {k:'bouwnummer',l:'Bouwnummer',w:'6%'},
-  {k:'contract_status',l:'Contract status',w:'8%'},
-  {k:'controlestatus',l:'Controlestatus',w:'8%'},
-  {k:'controleverzoek',l:'Controleverzoek',w:'8%'},
-];
-var DEFAULT_VISIBLE = ['bestandsnaam','document_nummer','bouwdeel','titel','discipline','bedrijf','project_fase','revisie','document_datum','document_status','_versie','_releases','_gedeeld','_created'];
-var visibleColKeys = new Set(DEFAULT_VISIBLE);
-var customCols = []; // [{k:'custom_1', l:'Mijn kolom'}]
-var customData = {}; // { 'fileVid': { 'custom_1': 'waarde' } }
-var colOrder = []; // keys in volgorde
-var colWidths = {}; // { key: 'px waarde' }
-var _customCounter = 0;
-
-function getColConfigKey() { return 'doclist-config-' + (pid || 'local'); }
-var COL_CONFIG_VERSION = 4; // Verhoog bij structurele wijzigingen
-function loadColConfig() {
-  try {
-    var raw = localStorage.getItem(getColConfigKey());
-    if (!raw) return;
-    var cfg = JSON.parse(raw);
-    // Reset als config van oude versie is
-    if (!cfg._v || cfg._v < COL_CONFIG_VERSION) {
-      console.log('[Cols] Oude config gereset naar defaults (v' + (cfg._v||0) + ' < v' + COL_CONFIG_VERSION + ')');
-      localStorage.removeItem(getColConfigKey());
-      return;
-    }
-    if (cfg.visible && Array.isArray(cfg.visible)) {
-      visibleColKeys = new Set(cfg.visible);
-      // Voeg kolommen toe die nieuw zijn sinds de config werd opgeslagen
-      DEFAULT_VISIBLE.forEach(function(k) {
-        var inAllCols = ALL_COLS.some(function(c) { return c.k === k; });
-        var wasBekend = cfg._knownKeys && cfg._knownKeys.indexOf(k) >= 0;
-        if (inAllCols && !wasBekend) visibleColKeys.add(k);
-      });
-    }
-    if (cfg.custom && Array.isArray(cfg.custom)) customCols = cfg.custom;
-    if (cfg.customData) customData = cfg.customData;
-    if (cfg.order && Array.isArray(cfg.order)) colOrder = cfg.order;
-    if (cfg.widths) colWidths = cfg.widths;
-    _customCounter = customCols.length;
-  } catch(e) { console.warn('[Cols] Config laden mislukt:', e); }
+// ============================================================
+//  FAVORIETEN
+// ============================================================
+function getFavKey() { return 'tc_fav_' + (currentUser?.sub || 'anon'); }
+function loadFavorites() { try { favorites = new Set(JSON.parse(localStorage.getItem(getFavKey()) || '[]')); } catch(e) { favorites = new Set(); } }
+function saveFavorites() { localStorage.setItem(getFavKey(), JSON.stringify([...favorites])); }
+function toggleFavorite(id) {
+  if (favorites.has(id)) favorites.delete(id); else favorites.add(id);
+  saveFavorites();
+  renderTable();
+  updateStats();
 }
-function saveColConfig() {
-  try {
-    localStorage.setItem(getColConfigKey(), JSON.stringify({
-      visible: Array.from(visibleColKeys),
-      custom: customCols,
-      customData: customData,
-      order: colOrder,
-      widths: colWidths,
-      _knownKeys: ALL_COLS.map(function(c) { return c.k; }),
-      _v: COL_CONFIG_VERSION
-    }));
-  } catch(e) { console.warn('[Cols] Config opslaan mislukt:', e); }
-}
-function getCols() {
-  var all = ALL_COLS.concat(customCols);
-  var cols = all.filter(function(c) { return visibleColKeys.has(c.k); });
-  if (colOrder.length) {
-    var orderMap = {};
-    colOrder.forEach(function(k,i) { orderMap[k] = i; });
-    cols.sort(function(a,b) {
-      var ia = orderMap[a.k] !== undefined ? orderMap[a.k] : 999;
-      var ib = orderMap[b.k] !== undefined ? orderMap[b.k] : 999;
-      return ia - ib;
-    });
+
+// ============================================================
+//  INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', async () => {
+  let inIframe = false;
+  try { inIframe = (window.self !== window.top); } catch(e) { inIframe = true; }
+  if (inIframe) {
+    isEmbedded = true;
+    await initExtensionMode();
+  } else {
+    const saved = sessionStorage.getItem('tc_token');
+    const savedRegion = sessionStorage.getItem('tc_region');
+    if (saved) {
+      document.getElementById('tokenInput').value = saved;
+      if (savedRegion) document.getElementById('regionSelect').value = savedRegion;
+      onTokenInput();
+    }
   }
-  return cols;
-}
-// Oud COLS alias voor compatibiliteit tijdens migratie
-var COLS = getCols();
+  checkSidebarMode();
+  window.addEventListener('resize', checkSidebarMode);
+});
 
-const TCM = {'File location':'file_location','Bestandsnaam':'bestandsnaam','Document nummer':'document_nummer','Project fase':'project_fase','Document datum':'document_datum','Revisie':'revisie','Document status':'document_status','Bedrijf':'bedrijf','Bouwdeel':'bouwdeel','Bouwnummer':'bouwnummer','Contract status':'contract_status','Controlestatus (door controlerende partij)':'controlestatus','Controleverzoek':'controleverzoek','Discipline':'discipline','Document aanmaak datum':'document_aanmaak_datum','Document soort':'document_soort','IFC timestamp':'ifc_timestamp','Tags':'tags','Titel':'titel'};
-
-// === NAVIGATION ===
-const pages = ['pgLoading','pgUpload','pgDash','pgRel','pgDocs'];
-function goTo(id) {
-  pages.forEach(p => document.getElementById(p).classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  curPage = id;
-  var isStart = (id==='pgLoading'||id==='pgUpload');
-  document.getElementById('backBtn').style.display = isStart ? 'none' : 'block';
-  document.getElementById('backBtn').innerHTML = id==='pgDocs' ? '&#9776; Dashboard' : '&#8592; Terug';
-  document.getElementById('relBtn').style.display = (id==='pgDocs'||id==='pgDash') ? 'block' : 'none';
-  document.getElementById('csvBtn').style.display = id==='pgDocs' ? 'block' : 'none';
-  document.getElementById('zipBtn').style.display = id==='pgDocs' ? 'block' : 'none';
-  document.getElementById('editBtn').style.display = id==='pgDocs' ? 'block' : 'none';
-  if (id !== 'pgDocs' && editMode) { editMode = false; selectedDocs.clear(); }
-}
-function goBack() {
-  // Nooit terug naar pgLoading of pgUpload
-  if (curPage === 'pgDocs') { goTo('pgDash'); renderDash(); }
-  else if (curPage === 'pgRel') { goTo('pgDash'); renderDash(); }
-  else if (curPage === 'pgDash') { goTo('pgDocs'); } // Dashboard → terug naar docs
-}
+function checkSidebarMode() { document.body.classList.toggle('sidebar-mode', window.innerWidth < 600); }
 
 // ============================================================
-//  TC EXTENSIE — Bewezen patroon uit Rechten Viewer
+//  TC EXTENSIE MODUS
 // ============================================================
-
-// Wacht tot TC de Workspace API library injecteert
-function waitForWorkspaceAPI(maxWait) {
-  maxWait = maxWait || 10000;
-  return new Promise(function(resolve, reject) {
-    var api = window.WorkspaceAPI || window.Extensions || window.TrimbleConnectWorkspace;
-    if (api) { console.log('[TC] API library direct gevonden'); return resolve(api); }
-    var start = Date.now();
-    var interval = setInterval(function() {
-      api = window.WorkspaceAPI || window.Extensions || window.TrimbleConnectWorkspace;
-      if (api) { clearInterval(interval); console.log('[TC] API library gevonden na wachten'); resolve(api); }
-      else if (Date.now() - start > maxWait) { clearInterval(interval); reject(new Error('Workspace API niet beschikbaar')); }
+function waitForWorkspaceAPI(maxWait = 10000) {
+  return new Promise((resolve, reject) => {
+    const api = window.WorkspaceAPI || window.Extensions || window.TrimbleConnectWorkspace;
+    if (api) return resolve(api);
+    const start = Date.now();
+    const interval = setInterval(() => {
+      const api = window.WorkspaceAPI || window.Extensions || window.TrimbleConnectWorkspace;
+      if (api) { clearInterval(interval); resolve(api); }
+      else if (Date.now() - start > maxWait) { clearInterval(interval); reject(new Error('Workspace API timeout')); }
     }, 200);
   });
 }
 
-async function initTCExtension() {
-  var inIframe = false;
-  try { inIframe = (window.self !== window.top); } catch(e) { inIframe = true; }
-  console.log('[Viewer] In iframe:', inIframe);
-
-  if (!inIframe) {
-    console.log('[Viewer] Standalone modus');
-    goTo('pgUpload');
-    return;
-  }
-
-  isEmbedded = true;
-  goTo('pgLoading');
-
+async function initExtensionMode() {
   try {
-    // Stap 1: Verbinden
-    var apiLib = await waitForWorkspaceAPI(10000);
-    tcAPI = await apiLib.connect(window.parent, function(event, data) {
-      console.log('[TC Event]', event, data);
+    const apiLib = await waitForWorkspaceAPI(10000);
+    tcAPI = await apiLib.connect(window.parent, (event, data) => {
       if (data && (data.type === 'token' || event === 'extension.accessToken')) {
-        var token = (typeof data === 'string') ? data : (data.token || data.accessToken || null);
-        if (token && token.length > 20) { tcToken = token; console.log('[TC] Token via event, lengte:', token.length); }
+        const t = (typeof data === 'string') ? data : (data.token || data.accessToken || null);
+        if (t && t.length > 20) token = t;
       }
     }, 15000);
-    console.log('[TC] Verbonden met Workspace API');
+    console.log('[Dashboard] Verbonden met Workspace API');
 
-    // Project info
-    tcProject = await tcAPI.project.getCurrentProject();
-    console.log('[TC] Project:', JSON.stringify(tcProject));
-    pid = tcProject.id || '';
-    document.getElementById('hdrInfo').textContent = tcProject.name || '';
-    document.getElementById('tcProjectName').textContent = tcProject.name || '';
+    const menuDef = { title: 'Project Dashboard', icon: 'https://tomtietom.github.io/trimble-project-dashboard/icon.png', command: 'open_project_dashboard' };
+    if (tcAPI.ui?.setMenu) tcAPI.ui.setMenu(menuDef);
+    else if (tcAPI.extension?.setMenu) tcAPI.extension.setMenu(menuDef);
 
-    // Regio
-    var loc = (tcProject.location || 'europe').toLowerCase();
-    if (loc.includes('america') || loc.includes('north')) { TC_BASE = TC_API_REGIONS['north america']; PSET_BASE = PSET_REGIONS['north america']; }
-    else if (loc.includes('asia')) { TC_BASE = TC_API_REGIONS.asia; PSET_BASE = PSET_REGIONS.asia; }
-    else { TC_BASE = TC_API_REGIONS.europe; PSET_BASE = PSET_REGIONS.europe; }
-    console.log('[TC] Regio:', loc, '-> API:', TC_BASE);
-
-    // Sidebar menu (probeer beide methodes)
-    var menuDef = {
-      title: 'Documentenlijst Viewer',
-      icon: 'https://tomtietom.github.io/tc-viewer/icon.png',
-      command: 'open_doclist'
-    };
-    if (tcAPI.ui && typeof tcAPI.ui.setMenu === 'function') { tcAPI.ui.setMenu(menuDef); }
-    else if (tcAPI.extension && typeof tcAPI.extension.setMenu === 'function') { tcAPI.extension.setMenu(menuDef); }
-
-    // Start data ophalen
-    tcAutoFetchData();
-
-  } catch(e) {
-    console.warn('[TC] Init fout:', e.message);
-    goTo('pgUpload');
-  }
-}
-
-// === TC API CALLS ===
-async function tcFetch(path) {
-  var url = TC_BASE + path;
-  var r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + tcToken } });
-  if (!r.ok) { console.warn('[TC] ' + r.status + ' voor ' + url); throw new Error(r.status + ' ' + r.statusText); }
-  return r.json();
-}
-
-async function tcFetchPSet(path) {
-  var url = PSET_BASE + path;
-  var r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + tcToken } });
-  if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
-  return r.json();
-}
-
-function tcStep(n, status, text) {
-  var el = document.getElementById('tcStep' + n);
-  if (!el) return;
-  if (status === 'loading') { el.innerHTML = '&#9203; ' + text; el.className = 'load-step active'; }
-  else if (status === 'done') { el.innerHTML = '&#9989; ' + text; el.className = 'load-step active'; }
-  else if (status === 'error') { el.innerHTML = '&#10060; ' + text; el.className = 'load-step active'; }
-  document.getElementById('tcStatusText').textContent = text;
-}
-
-function tcShowProgress(pct) {
-  var bar = document.getElementById('tcProgress');
-  bar.style.display = '';
-  document.getElementById('tcProgressFill').style.width = pct + '%';
-}
-
-async function fetchReleases() {
-  console.log('[TC] Releases ophalen...');
-  var relList = await tcFetch('/releases?projectId=' + pid);
-  var relArr = Array.isArray(relList) ? relList : (relList.items || []);
-  releases = [];
-  releaseMap = {};
-  for (var i = 0; i < relArr.length; i++) {
-    var rel = relArr[i];
-    var relFiles = [];
-    try {
-      var fResp = await tcFetch('/releases/' + rel.id + '/files');
-      relFiles = Array.isArray(fResp) ? fResp : (fResp.items || []);
-    } catch(e) { console.warn('[TC] Release files mislukt:', rel.name, e.message); }
-    releases.push({ id: rel.id, name: rel.name, status: rel.status, filesCount: rel.filesCount || relFiles.length, dueDate: rel.dueDate, createdOn: rel.createdOn, notes: rel.notes, files: relFiles });
-    relFiles.forEach(function(f) {
-      var fid = f.fileId || f.id || '';
-      if (!releaseMap[fid]) releaseMap[fid] = [];
-      releaseMap[fid].push(rel.name);
-      // Match ook op naam als ID niet overeenkomt
-      if (f.name) {
-        var docByName = docs.find(function(d) { return d.bestandsnaam === f.name && !releaseMap[d._vid]; });
-        if (docByName && docByName._vid !== fid) { if (!releaseMap[docByName._vid]) releaseMap[docByName._vid] = []; releaseMap[docByName._vid].push(rel.name); }
-      }
-    });
-  }
-  // Vul _releases op docs
-  docs.forEach(function(d) { d._releases = (releaseMap[d._vid] || []).join(', '); });
-  console.log('[TC] Releases:', releases.length, '| Bestanden met release:', Object.keys(releaseMap).length);
-}
-
-function vulDocs(files) {
-  docs = files.map(function(b) {
-    return {
-      file_location: b.file_location||'', bestandsnaam: b.bestandsnaam||'',
-      document_nummer: b.document_nummer||'', project_fase: b.project_fase||'',
-      document_datum: b.document_datum||'', revisie: b.revisie||'',
-      document_status: b.document_status||'', bedrijf: b.bedrijf||'',
-      bouwdeel: b.bouwdeel||'', bouwnummer: b.bouwnummer||'',
-      discipline: b.discipline||'', document_soort: b.document_soort||'',
-      titel: b.titel||'', tags: b.tags||'',
-      contract_status: b.contract_status||'', controlestatus: b.controlestatus||'',
-      controleverzoek: b.controleverzoek||'', _vid: b._vid||'', _versie: b._versie||'',
-      _created: b._created||'', _modified: b._modified||'',
-      _canEdit: b._canEdit !== false, _psetLink: b._psetLink||'frn:tcfile:'+(b._vid||''),
-    };
-  });
-  mapS = {};
-  docs.forEach(function(d) { if (!d.file_location) d.file_location = '(root)'; var m = d.file_location; if (!mapS[m]) mapS[m] = []; mapS[m].push(d); });
-}
-
-async function tcAutoFetchData() {
-  try {
-    // === TOKEN OPHALEN (3-methode fallback) ===
-    tcStep(1, 'loading', 'Verbinden met Trimble Connect...');
-
-    if (!tcToken) {
-      // Methode 1: requestPermission
+    // Token ophalen
+    if (!token) {
       try {
-        console.log('[TC] Probeer requestPermission...');
-        var tokenResult = await Promise.race([
-          tcAPI.extension.requestPermission('accesstoken'),
-          new Promise(function(_, reject) { setTimeout(function() { reject(new Error('timeout')); }, 5000); })
-        ]);
-        if (typeof tokenResult === 'string' && tokenResult.length > 20) { tcToken = tokenResult; }
-        else if (tokenResult && typeof tokenResult === 'object') { tcToken = tokenResult.token || tokenResult.accessToken || null; }
-        console.log('[TC] requestPermission:', tcToken ? 'OK' : 'geen token');
-      } catch(e) { console.warn('[TC] requestPermission:', e.message); }
+        const result = await Promise.race([tcAPI.extension.requestPermission('accesstoken'), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))]);
+        if (typeof result === 'string' && result.length > 20) token = result;
+        else if (result?.token) token = result.token;
+        else if (result?.accessToken) token = result.accessToken;
+      } catch(e) {}
+    }
+    if (!token && tcAPI.extension?.getAccessToken) {
+      try { const t = await tcAPI.extension.getAccessToken(); if (t && t.length > 20) token = t; } catch(e) {}
     }
 
-    if (!tcToken) {
-      // Methode 2: Wacht op event
-      console.log('[TC] Wachten op token event...');
-      await new Promise(function(resolve) {
-        var timeout = setTimeout(resolve, 5000);
-        var check = setInterval(function() { if (tcToken) { clearInterval(check); clearTimeout(timeout); resolve(); } }, 200);
-      });
+    if (token) {
+      currentUser = parseJWT(token);
+      loadFavorites();
+
+      // Huidig project detecteren
+      let tcProject = null;
+      try { tcProject = await tcAPI.project.getCurrentProject(); } catch(e) {}
+      if (tcProject?.id) currentProjectId = tcProject.id;
+
+      const loc = (tcProject?.location || 'europe').toLowerCase();
+      let region = 'europe';
+      if (loc.includes('america') || loc.includes('north')) region = 'north america';
+      else if (loc.includes('asia')) region = 'asia';
+      lastRegion = region;
+
+      // Toon nieuw-tabblad knop in extensie modus
+      document.getElementById('btnNewTab').style.display = 'inline-block';
+
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('loadingScreen').style.display = 'flex';
+      try { await loadAllProjects(region); } catch(e) { console.error('[Dashboard] Load fout:', e); }
     }
-
-    if (!tcToken) {
-      // Methode 3: getAccessToken
-      if (tcAPI.extension && typeof tcAPI.extension.getAccessToken === 'function') {
-        try { var t = await tcAPI.extension.getAccessToken(); if (t && t.length > 20) tcToken = t; } catch(e) {}
-      }
-    }
-
-    if (!tcToken) {
-      tcStep(1, 'error', 'Geen access token ontvangen');
-      document.getElementById('tcError').style.display = '';
-      document.getElementById('tcError').textContent = 'Kan geen toegang krijgen tot het project. Probeer de extensie opnieuw te laden of controleer je rechten.';
-      return;
-    }
-
-    console.log('[TC] Token OK, lengte:', tcToken.length);
-    tcStep(1, 'done', 'Verbonden met ' + (tcProject.name || 'project'));
-
-    // === MAPPEN + BESTANDEN OPHALEN ===
-    tcStep(2, 'loading', 'Mappenstructuur ophalen...');
-    var projData = await tcFetch('/projects/' + pid);
-    var rootId = projData.rootId;
-    if (!rootId) { tcStep(2, 'error', 'Root folder niet gevonden'); return; }
-    tcStep(2, 'done', 'Project geladen');
-
-    tcStep(3, 'loading', 'Bestanden ophalen...');
-    var allFiles = [];
-    try { await tcGetItemsRecursive(rootId, '', allFiles); } catch(e) { console.warn('[TC] Sommige mappen overgeslagen'); }
-    tcStep(3, 'done', allFiles.length + ' bestanden gevonden');
-    console.log('[TC] Bestanden klaar:', allFiles.length);
-
-    // Vul docs alvast (zonder metadata)
-    vulDocs(allFiles);
-
-    // === METADATA OPHALEN ===
-    tcStep(4, 'loading', 'Metadata ophalen...');
-    try {
-      await tcGetMetadata(pid, allFiles);
-      vulDocs(allFiles); // Opnieuw vullen met metadata
-      var metaCount = docs.filter(function(f) { return f.document_status || f.discipline || f.project_fase; }).length;
-      tcStep(4, 'done', 'Metadata: ' + metaCount + ' bestanden');
-    } catch(e) {
-      console.warn('[TC] Metadata mislukt:', e.message);
-      tcStep(4, 'error', 'Metadata niet beschikbaar');
-    }
-
-    // === RELEASES OPHALEN ===
-    try { await fetchReleases(); } catch(e) { console.warn('[TC] Releases mislukt:', e.message); }
-
-    // === DIAGNOSTIEK: metadata check ===
-    var metaDocs = docs.filter(function(d) { return d.document_status || d.discipline || d.bedrijf || d.titel; });
-    console.log('[TC] Docs met metadata:', metaDocs.length, '/', docs.length);
-    if (metaDocs.length > 0) {
-      console.log('[TC] Voorbeeld doc met metadata:', JSON.stringify(metaDocs[0]));
-    } else {
-      console.warn('[TC] GEEN docs met metadata gevonden! PROP_MAP:', PROP_MAP);
-    }
-
-    // === DOCUMENTENLIJST TONEN (direct, dashboard op achtergrond) ===
-    console.log('[TC] Documentenlijst tonen, docs:', docs.length);
-    renderDash();
-    toonDocs();
-
   } catch(e) {
-    console.error('[TC] Auto-fetch fout:', e);
-    if (docs.length > 0) {
-      console.log('[TC] Fout maar toon docs met', docs.length, 'docs');
-      renderDash();
-      toonDocs();
-    } else {
-      tcStep(1, 'error', 'Fout: ' + e.message);
-      document.getElementById('tcError').style.display = '';
-      document.getElementById('tcError').textContent = e.message;
-    }
+    console.error('[Dashboard] Init mislukt:', e.message);
   }
 }
 
-var _fetchedFolders = 0, _totalFolders = 0;
-
-async function tcGetItemsRecursive(folderId, pad, result) {
-  var data;
-  try { data = await tcFetch('/folders/' + folderId + '/items'); } catch(e) { _fetchedFolders++; return; }
-  var items = Array.isArray(data) ? data : (data.items || []);
-  var subFolders = [];
-  for (var i = 0; i < items.length; i++) {
-    var item = items[i];
-    var naam = item.name || 'Naamloos';
-    var volledigPad = pad ? pad + '/' + naam : naam;
-    if (item.type === 'FOLDER') {
-      subFolders.push({ id: item.id, pad: volledigPad });
-    } else {
-      result.push({ file_location: pad, bestandsnaam: naam, _vid: item.id || '', _created: item.createdOn || '', _modified: item.modifiedOn || '', _versie: item.revision || item.version || '' });
-    }
-  }
-  _fetchedFolders++;
-  _totalFolders += subFolders.length;
-
-  // Voortgang tonen
-  var pct = _totalFolders > 0 ? Math.min(95, Math.round(_fetchedFolders / (_totalFolders + 1) * 100)) : 0;
-  tcShowProgress(pct);
-  document.getElementById('tcStatusText').textContent = 'Mappen: ' + _fetchedFolders + ' | Bestanden: ' + result.length;
-
-  // Parallelle requests (max 8 tegelijk, met foutafhandeling)
-  var BATCH = 8;
-  for (var b = 0; b < subFolders.length; b += BATCH) {
-    var batch = subFolders.slice(b, b + BATCH);
-    await Promise.all(batch.map(function(sf) {
-      return tcGetItemsRecursive(sf.id, sf.pad, result).catch(function() {});
-    }));
-  }
+// ============================================================
+//  JWT DECODEREN
+// ============================================================
+function parseJWT(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return { email: payload.email || payload.unique_name || payload.preferred_username || null, sub: payload.sub || payload.oid || null, name: payload.name || payload.given_name || null };
+  } catch(e) { return null; }
 }
 
-async function tcGetMetadata(projectId, bestanden) {
-  var libId = 'tcproject:prod:' + projectId;
-  console.log('[TC] PSet lib:', libId);
+// ============================================================
+//  TOKEN INVOER
+// ============================================================
+function onTokenInput() {
+  const input = document.getElementById('tokenInput').value.trim();
+  const statusEl = document.getElementById('tokenStatus');
+  const btnLoad = document.getElementById('btnLoad');
+  const textarea = document.getElementById('tokenInput');
+  if (!input) { statusEl.textContent = ''; statusEl.className = 'token-status'; btnLoad.disabled = true; textarea.classList.remove('has-token'); return; }
+  const cleaned = input.replace(/^Bearer\s+/i, '');
+  const parts = cleaned.split('.');
+  if (parts.length === 3 && cleaned.length > 100) {
+    textarea.classList.add('has-token'); btnLoad.disabled = false;
+    try {
+      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+      const email = payload.email || payload.unique_name || payload.preferred_username || '';
+      statusEl.textContent = email ? 'Token herkend voor: ' + email : 'Geldig token gedetecteerd';
+      statusEl.className = 'token-status valid';
+    } catch(e) { statusEl.textContent = 'Token gedetecteerd'; statusEl.className = 'token-status valid'; }
+  } else { textarea.classList.remove('has-token'); btnLoad.disabled = true; statusEl.textContent = 'Ongeldig token'; statusEl.className = 'token-status invalid'; }
+}
 
-  // === PROP_MAP BOUWEN ===
-  // === PROP_MAP bouwen: UUID → veldnaam ===
-  // Strategie: haal PSet definitie op, gebruik i18n voor namen, schema.props voor UUIDs
-  PROP_MAP = {};
+function startLoading() {
+  const input = document.getElementById('tokenInput').value.trim();
+  if (!input) return;
+  token = input.replace(/^Bearer\s+/i, '');
+  const region = document.getElementById('regionSelect').value;
+  sessionStorage.setItem('tc_token', token); sessionStorage.setItem('tc_region', region);
+  currentUser = parseJWT(token);
+  loadFavorites();
+  lastRegion = region;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('loadingScreen').style.display = 'flex';
+  loadAllProjects(region);
+}
 
-  // Helper: match een property naam naar TCM veldnaam
-  function matchTCM(name) {
-    if (!name) return null;
-    if (TCM[name]) return TCM[name];
-    // Fuzzy: lowercase, geen speciale tekens
-    var lc = name.toLowerCase().replace(/[^a-z]/g, '');
-    for (var k in TCM) { if (k.toLowerCase().replace(/[^a-z]/g, '') === lc) return TCM[k]; }
-    return null;
+// ============================================================
+//  API HELPERS
+// ============================================================
+function getApiUrl(region, endpoint) {
+  const key = REGION_KEYS[region] || 'eu';
+  return PROXY_BASE + '/tc/' + key + '/' + endpoint.replace(/^\//, '');
+}
+
+async function apiFetch(region, endpoint) {
+  const resp = await fetch(getApiUrl(region, endpoint), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
+  if (!resp.ok) throw new Error('API ' + resp.status + ': ' + endpoint);
+  return resp.json();
+}
+
+async function apiFetchPaginated(region, endpoint, pageSize) {
+  pageSize = pageSize || 100;
+  const all = [], seen = new Set(); let start = 0;
+  while (true) {
+    const resp = await fetch(getApiUrl(region, endpoint), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json', 'Range': 'items=' + start + '-' + (start + pageSize - 1) } });
+    if (!resp.ok) throw new Error('API ' + resp.status + ': ' + endpoint);
+    const items = await resp.json();
+    if (!Array.isArray(items) || items.length === 0) break;
+    for (const item of items) { if (!seen.has(item.id)) { seen.add(item.id); all.push(item); } }
+    const cr = resp.headers.get('Content-Range');
+    if (cr) { const m = cr.match(/items \d+-\d+\/(\d+)/); if (m) { start += items.length; if (start >= parseInt(m[1])) break; } else break; } else break;
   }
+  return all;
+}
+
+async function fetchAllProjects(region) {
+  const all = [], seen = new Set(); let offset = 0; const limit = 100;
+  while (true) {
+    const resp = await fetch(getApiUrl(region, 'projects?offset=' + offset + '&limit=' + limit), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
+    if (!resp.ok) throw new Error('API ' + resp.status + ': projects');
+    const items = await resp.json();
+    if (!Array.isArray(items) || items.length === 0) break;
+    for (const item of items) { if (!seen.has(item.id)) { seen.add(item.id); all.push(item); } }
+    if (items.length < limit) break;
+    offset += items.length;
+  }
+  return all;
+}
+
+// ============================================================
+//  PROJECTEN LADEN
+// ============================================================
+async function loadAllProjects(selectedRegion, isRefresh) {
+  if (isLoading) return;
+  isLoading = true;
+  projects = [];
+  const regionsToFetch = selectedRegion === 'all' ? Object.keys(TC_REGIONS) : [selectedRegion];
 
   try {
-    var defResp = await tcFetchPSet('/libs/' + encodeURIComponent(libId) + '/defs/tcfiles');
-    var schema = defResp.schema || {};
-    var schemaProps = schema.props || schema.properties || {};
-    var propIds = Object.keys(schemaProps).filter(function(k) { return k.indexOf('-') > 0; }); // UUIDs bevatten streepjes
-    var i18n = defResp.i18n || {};
+    if (!isRefresh) { updateStep(1, 'active', 'Verbinding maken...'); }
+    if (!token) throw new Error('Geen token beschikbaar');
+    if (!isRefresh) { updateStep(1, 'done', 'Verbonden' + (currentUser?.email ? ' als ' + currentUser.email : '')); }
+    if (!isRefresh) { updateStep(2, 'active', 'Projecten ophalen...'); }
 
-    console.log('[TC] PSet definitie: schema.props=' + propIds.length + ' UUIDs, i18n keys=' + Object.keys(i18n).join(','));
-    if (Object.keys(i18n).length > 0) console.log('[TC] i18n data:', JSON.stringify(i18n).substring(0, 1000));
-
-    // Methode A: i18n — property namen per locale
-    // Probeer meerdere i18n formaten:
-    // Format 1: { "nl": { "props": { "uuid": { "name": "..." } } } }
-    // Format 2: { "nl": { "uuid": "naam" } }
-    // Format 3: { "props": { "uuid": { "name": "..." } } }
-    // Format 4: { "uuid": "naam" }
-    // Format 5: { "nl": { "props": { "uuid": "naam" } } }
-    var i18nNames = {}; // uuid → naam
-
-    function extractI18nNames(obj) {
-      if (!obj || typeof obj !== 'object') return;
-      for (var key in obj) {
-        var val = obj[key];
-        // Als de key een UUID is (bevat streepjes) en de value een string → direct mapping
-        if (key.indexOf('-') > 0 && typeof val === 'string') { i18nNames[key] = val; continue; }
-        // Als de key een UUID is en value een object met name → pak name
-        if (key.indexOf('-') > 0 && val && typeof val === 'object' && val.name) { i18nNames[key] = val.name; continue; }
-        // Als de key een locale is (2-3 chars) of 'props' → recursief
-        if ((key.length <= 5 || key === 'props' || key === 'properties') && typeof val === 'object') {
-          extractI18nNames(val);
-        }
-      }
-    }
-    extractI18nNames(i18n);
-    console.log('[TC] i18n namen gevonden:', Object.keys(i18nNames).length, i18nNames);
-
-    // Bouw PROP_MAP vanuit i18n namen
-    for (var uuid in i18nNames) {
-      var veld = matchTCM(i18nNames[uuid]);
-      if (veld) PROP_MAP[uuid] = veld;
-    }
-    if (Object.keys(PROP_MAP).length > 0) {
-      console.log('[TC] PROP_MAP uit i18n:', Object.keys(PROP_MAP).length, 'velden');
-    }
-
-    // Methode B: als i18n faalt, probeer schema.props keys direct (als ze leesbare namen zijn)
-    if (Object.keys(PROP_MAP).length === 0 && propIds.length > 0) {
-      propIds.forEach(function(pid) {
-        var propDef = schemaProps[pid] || {};
-        var naam = propDef.title || propDef.name || propDef.description || '';
-        var veld = matchTCM(naam);
-        if (veld) PROP_MAP[pid] = veld;
-      });
-      if (Object.keys(PROP_MAP).length > 0) {
-        console.log('[TC] PROP_MAP uit schema props:', Object.keys(PROP_MAP).length, 'velden');
-      }
-    }
-  } catch(e) {
-    console.warn('[TC] PSet definitie ophalen mislukt:', e.message);
-  }
-
-  // Haal PSet instances op (nodig voor metadata matching)
-  var psetsResp;
-  try {
-    psetsResp = await tcFetchPSet('/libs/' + encodeURIComponent(libId) + '/psets');
-  } catch(e) {
-    console.warn('[TC] PSet ophalen mislukt:', e.message);
-    return;
-  }
-  var instArray = psetsResp.items || [];
-
-  // Fallback: hardcoded UUIDs (VW BVGO schema)
-  if (Object.keys(PROP_MAP).length === 0) {
-    console.log('[TC] Gebruik fallback PROP_MAP (hardcoded)');
-    PROP_MAP = {
-      '79715f10-055a-11ea-9ee0-4f66993176e1': 'document_datum',
-      '3d82d630-c1a6-11ed-a3ee-5d6c31021d9f': 'document_aanmaak_datum',
-      'a442e490-d47a-11ee-8133-af31c2576a74': 'revisie',
-      'cbc46730-41af-11ea-9125-af458cfb61c4': 'document_status',
-      'c83d7d90-055a-11ea-9ee0-4f66993176e1': 'project_fase',
-      '202e0b40-055c-11ea-9ee0-4f66993176e1': 'discipline',
-      '27e4c520-6f6b-11eb-84a6-c3eae4856606': 'document_nummer',
-      '502b6300-b19b-11eb-a211-dbedff274ddf': 'titel',
-      '6d83dfb0-41b0-11ea-9125-af458cfb61c4': 'controleverzoek',
-      '91ed02a0-41b0-11ea-9125-af458cfb61c4': 'controlestatus',
-      'd3ffaee0-41b0-11ea-9125-af458cfb61c4': 'contract_status',
-      'd9938cf0-055b-11ea-9ee0-4f66993176e1': 'document_soort',
-      'b6f71e70-9d38-11eb-bebe-b5fce10145cf': 'bouwdeel',
-      '15369030-c1a7-11ed-a3ee-5d6c31021d9f': 'bouwnummer',
-      '33075090-c1a7-11ed-a3ee-5d6c31021d9f': 'bedrijf',
-      'f9961070-6f6a-11eb-84a6-c3eae4856606': 'ifc_timestamp',
-    };
-  }
-  console.log('[TC] PROP_MAP definitief:', Object.keys(PROP_MAP).length, 'velden', PROP_MAP);
-
-  console.log('[TC] ' + instArray.length + ' PSet instances gevonden');
-
-  // Bouw lookup: fileVID → bestand
-  var lookup = {};
-  bestanden.forEach(function(b) { if (b._vid) lookup[b._vid] = b; });
-
-  // Map metadata naar bestanden
-  var matched = 0;
-  for (var j = 0; j < instArray.length; j++) {
-    var inst = instArray[j];
-    // link format: "frn:tcfile:{VID}" → extract VID
-    var link = inst.link || '';
-    var vid = link.replace('frn:tcfile:', '');
-    var b = lookup[vid];
-    if (!b) continue;
-    matched++;
-    b._canEdit = (inst._actions || []).indexOf('pset:PutPSet') >= 0;
-    b._psetLink = link;
-    var props = inst.props || {};
-    for (var propId in props) {
-      var veldNaam = PROP_MAP[propId];
-      if (veldNaam && props[propId] && props[propId] !== '--') {
-        b[veldNaam] = String(props[propId]).trim();
-      }
-    }
-  }
-  console.log('[TC] Metadata gematcht: ' + matched + ' van ' + instArray.length + ' instances');
-}
-
-// (Standalone upload verwijderd — alleen TC extensie modus)
-
-// === DASHBOARD ===
-function toonDashboard() { goTo('pgDash'); renderDash(); }
-
-function renderDash() {
-  var el = document.getElementById('dashContent'), total = docs.length;
-  var stCnt = {}; docs.forEach(function(d) { var s = d.document_status; if (s) stCnt[s] = (stCnt[s]||0)+1; });
-  var stTotal = 0; for (var k in stCnt) stTotal += stCnt[k];
-  var diCnt = {}; docs.forEach(function(d) { var s = d.discipline; if (s) diCnt[s] = (diCnt[s]||0)+1; });
-  var diSorted = Object.entries(diCnt).sort(function(a,b) { return b[1]-a[1]; });
-  var maxDi = diSorted.length ? diSorted[0][1] : 1;
-  var faCnt = {}; docs.forEach(function(d) { var s = d.project_fase; if (s) faCnt[s] = (faCnt[s]||0)+1; });
-  var faSorted = Object.entries(faCnt).sort(function(a,b) { return b[1]-a[1]; });
-  var maxFa = faSorted.length ? faSorted[0][1] : 1;
-
-  // Metadata completheid totaal
-  var metaDocs = docs.filter(function(d) { return d.document_status || d.discipline || d.project_fase || d.document_datum; }).length;
-  var metaPct = total > 0 ? Math.round(metaDocs / total * 100) : 0;
-  var zonderMeta = total - metaDocs;
-
-  var offset = 0, donutParts = [];
-  Object.entries(stCnt).sort(function(a,b) { return b[1]-a[1]; }).forEach(function(e) {
-    var pct = e[1] / (stTotal||1) * 100;
-    var klr = STATUS_KLEUR[e[0]] || '#ccc';
-    donutParts.push(klr + ' ' + offset + '% ' + (offset+pct) + '%');
-    offset += pct;
-  });
-  var donutCSS = donutParts.length ? 'conic-gradient(' + donutParts.join(',') + ')' : '#eee';
-
-  var veldHTML = VERPLICHT.map(function(veld) {
-    var filled = docs.filter(function(d) { return d[veld] && d[veld].trim(); }).length;
-    var pct = total > 0 ? Math.round(filled / total * 100) : 0;
-    var klr = pct >= 80 ? 'var(--ok)' : pct >= 50 ? 'var(--af)' : 'var(--warn)';
-    return '<div class="veld-card" style="cursor:pointer" onclick="filterEnToon(\''+veld+'\',\'\')"><div class="veld-ring" style="background:conic-gradient('+klr+' 0% '+pct+'%, #f0ebe5 '+pct+'% 100%)"><div class="veld-ring-c">'+pct+'%</div></div><div class="veld-info"><div class="veld-naam">'+VERPLICHT_LABEL[veld]+'</div><div class="veld-detail">'+filled+' van '+total+' ingevuld</div><div class="veld-bar"><div class="veld-fill" style="width:'+pct+'%;background:'+klr+'"></div></div></div></div>';
-  }).join('');
-
-  // Projectnaam + datum
-  var projNaam = (tcProject && tcProject.name) ? tcProject.name : '';
-  var vandaag = new Date().toLocaleDateString('nl-NL', {day:'2-digit',month:'long',year:'numeric'});
-
-  el.innerHTML =
-    '<div style="margin-bottom:16px"><h2 style="font-family:Montserrat,sans-serif;font-size:20px;font-weight:700">' + projNaam + '</h2><div style="font-size:12px;color:#888">' + vandaag + ' &mdash; ' + total + ' documenten in ' + Object.keys(mapS).length + ' mappen</div></div>' +
-    '<div class="big-stats">' +
-    '<div class="bstat" style="cursor:pointer" onclick="toonDocs()"><div class="lab">Documenten</div><div class="val">' + total + '</div></div>' +
-    '<div class="bstat" style="cursor:pointer" onclick="toonDocs()"><div class="lab">Mappen</div><div class="val">' + Object.keys(mapS).length + '</div></div>' +
-    '<div class="bstat" style="cursor:pointer" onclick="filterEnToon(\'document_status\',\'Definitief\')"><div class="lab">Definitief</div><div class="val" style="color:var(--ok)">' + (stCnt['Definitief']||0) + '</div></div>' +
-    '<div class="bstat"><div class="lab">Met metadata</div><div class="val" style="color:var(--info)">' + metaPct + '%</div></div>' +
-    '<div class="bstat"><div class="lab">Zonder metadata</div><div class="val" style="color:' + (zonderMeta > 0 ? 'var(--warn)' : 'var(--ok)') + '">' + zonderMeta + '</div></div>' +
-    '</div>' +
-    '<div class="dash-grid">' +
-    '<div class="dcard"><h3>Status verdeling</h3><div class="donut-wrap"><div class="donut" style="background:'+donutCSS+'"><div class="donut-c">'+stTotal+'</div></div><div class="donut-leg">'+Object.entries(stCnt).sort(function(a,b){return b[1]-a[1]}).map(function(e){return '<div style="cursor:pointer" onclick="filterEnToon(\'document_status\',\''+e[0]+'\')"><span class="dot" style="background:'+(STATUS_KLEUR[e[0]]||'#ccc')+'"></span>'+e[0]+': <b>'+e[1]+'</b></div>';}).join('')+'</div></div></div>' +
-    '<div class="dcard"><h3>Verplichte metadata</h3>' + veldHTML + '</div>' +
-    '<div class="dcard"><h3>Discipline</h3>' + diSorted.map(function(e){return '<div class="bar-r" style="cursor:pointer" onclick="filterEnToon(\'discipline\',\''+e[0]+'\')"><span class="bar-l" title="'+e[0]+'">'+e[0]+'</span><div class="bar-t"><div class="bar-f" style="width:'+e[1]/maxDi*100+'%;background:var(--af)"></div></div><span class="bar-c">'+e[1]+'</span></div>';}).join('') + '</div>' +
-    '<div class="dcard"><h3>Fase</h3>' + faSorted.map(function(e){return '<div class="bar-r" style="cursor:pointer" onclick="filterEnToon(\'project_fase\',\''+e[0]+'\')"><span class="bar-l" title="'+e[0]+'">'+e[0]+'</span><div class="bar-t"><div class="bar-f" style="width:'+e[1]/maxFa*100+'%;background:var(--info)"></div></div><span class="bar-c">'+e[1]+'</span></div>';}).join('') + '</div>' +
-    (releases.length ? '<div class="dcard" style="cursor:pointer" onclick="toonReleases()"><h3>Releases</h3>' + releases.map(function(r) { var st = r.status==='SENT'?'b-def':'b-con'; var lb = r.status==='SENT'?'Verzonden':'Open'; return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px"><span style="font-weight:500">' + r.name + '</span><span><span class="bdg '+st+'">'+lb+'</span> <span style="color:#888;margin-left:4px">'+r.filesCount+'</span></span></div>'; }).join('') + '</div>' : '') +
-    '</div>' +
-    '<div style="display:flex;gap:12px;margin-top:8px"><button class="nav-btn" onclick="toonDocs()">Bekijk documentenlijst &#8594;</button><button class="nav-btn sec" onclick="toonReleases()">&#128230; Releases</button><button class="nav-btn sec" onclick="exportCSV()">&#11015; CSV</button></div>';
-}
-
-// Filter vanuit dashboard en spring naar docs
-function filterEnToon(filterType, waarde) {
-  toonDocs();
-  var sel = document.getElementById('fCol_' + filterType);
-  if (sel) { sel.value = waarde; renderT(); }
-}
-
-// === DOCUMENTEN ===
-function toonDocs() {
-  goTo('pgDocs');
-  if (!document.getElementById('tHead').children.length) {
-    loadColConfig(); COLS = getCols();
-    // Laad gedeeld-markering uit localStorage
-    try {
-      var shareLog = JSON.parse(localStorage.getItem('doclist-shared-' + pid) || '{}');
-      docs.forEach(function(d) { if (shareLog[d._vid]) d._gedeeld = shareLog[d._vid].date.split('T')[0]; });
-    } catch(e) {}
-    vulFilters(); bouwBoom(); renderColChecks(); bouwTH(); renderT();
-    document.getElementById('searchBox').addEventListener('input', renderT);
-  } else {
-    // Herrender bij terugnavigatie (metadata kan intussen geladen zijn)
-    renderT();
-  }
-}
-
-// Kolommen die als filter/groepering beschikbaar zijn (tekstvelden, geen datum/revisie/bestandsnaam)
-var SKIP_FILTER = ['bestandsnaam','document_nummer','revisie','document_datum','_created','_versie','_releases','_gedeeld','titel'];
-function getFilterableCols() {
-  return getCols().filter(function(c) { return SKIP_FILTER.indexOf(c.k) === -1; });
-}
-
-function vulFilters() {
-  var filterCols = getFilterableCols();
-  // Verzamel unieke waarden per kolom
-  var sets = {};
-  filterCols.forEach(function(c) { sets[c.k] = new Set(); });
-  docs.forEach(function(d) { for (var k in sets) { var v = docVal(d, k); if (v) sets[k].add(v); } });
-
-  // Bewaar huidige filterwaarden
-  var curFilters = {};
-  document.querySelectorAll('#filterRows select').forEach(function(sel) {
-    if (sel.value && sel.dataset.fk) curFilters[sel.dataset.fk] = sel.value;
-  });
-
-  // Bouw filter dropdowns (2 per rij)
-  var container = document.getElementById('filterRows');
-  container.innerHTML = '';
-  for (var i = 0; i < filterCols.length; i += 2) {
-    var row = document.createElement('div'); row.className = 'frow';
-    for (var j = i; j < Math.min(i + 2, filterCols.length); j++) {
-      var c = filterCols[j];
-      var sel = document.createElement('select');
-      sel.id = 'fCol_' + c.k;
-      sel.dataset.fk = c.k;
-      var defOpt = document.createElement('option'); defOpt.value = ''; defOpt.textContent = c.l; sel.appendChild(defOpt);
-      Array.from(sets[c.k]).sort().forEach(function(w) { var o = document.createElement('option'); o.value = w; o.textContent = w; sel.appendChild(o); });
-      if (curFilters[c.k]) sel.value = curFilters[c.k];
-      sel.addEventListener('change', renderT);
-      row.appendChild(sel);
-    }
-    container.appendChild(row);
-  }
-
-  // Groepering dropdown
-  var grp = document.getElementById('fGroep');
-  var curGrp = grp.value || '';
-  grp.innerHTML = '';
-  var g0 = document.createElement('option'); g0.value = ''; g0.textContent = 'Geen groepering'; grp.appendChild(g0);
-  var gMap = document.createElement('option'); gMap.value = 'file_location'; gMap.textContent = 'Groepeer: Map'; grp.appendChild(gMap);
-  filterCols.forEach(function(c) {
-    var o = document.createElement('option'); o.value = c.k; o.textContent = 'Groepeer: ' + c.l; grp.appendChild(o);
-  });
-  grp.value = curGrp;
-
-  // Release filter dropdown
-  var relSel = document.getElementById('fRelease');
-  if (relSel) {
-    var curRel = relSel.value || '';
-    relSel.innerHTML = '<option value="">Alle releases</option>';
-    releases.forEach(function(r) {
-      var o = document.createElement('option'); o.value = r.name; o.textContent = r.name; relSel.appendChild(o);
-    });
-    relSel.value = curRel;
-  }
-}
-
-function bouwBoom() {
-  var tree = document.getElementById('treeList'); tree.innerHTML = '';
-  var alle = mkTR('Alle documenten', docs.length, -1, false, '');
-  alle.querySelector('.tr-row').classList.add('act');
-  alle.querySelector('.tr-nm').onclick = function() { actMap=null; document.querySelectorAll('.tr-row').forEach(function(r){r.classList.remove('act')}); alle.querySelector('.tr-row').classList.add('act'); renderT(); };
-  tree.appendChild(alle);
-  var boom = {};
-  Object.keys(mapS).sort().forEach(function(mp) {
-    var dl = mp.split('/').filter(function(d){return d;}), node = boom, pad = '';
-    dl.forEach(function(deel, i) { pad += (i>0?'/':'') + deel; if (!node[deel]) node[deel] = {_ch:{},_cnt:0,_pad:pad,_d:i}; node[deel]._cnt += mapS[mp].length; node = node[deel]._ch; });
-  });
-  (function rn(node, parent) {
-    Object.keys(node).sort().forEach(function(naam) {
-      if (naam[0]==='_') return;
-      var inf = node[naam], hasCh = Object.keys(inf._ch).filter(function(k){return k[0]!=='_';}).length > 0;
-      var el = mkTR(naam, inf._cnt, inf._d, hasCh, inf._pad);
-      el.querySelector('.tr-nm').onclick = function() {
-        actMap = Object.keys(mapS).filter(function(m){return m===inf._pad || m.startsWith(inf._pad+'/');});
-        document.querySelectorAll('.tr-row').forEach(function(r){r.classList.remove('act')}); el.querySelector('.tr-row').classList.add('act'); renderT();
-      };
-      parent.appendChild(el);
-      if (hasCh) { var ch = document.createElement('div'); ch.className = 'tr-ch' + (inf._d > 0 ? ' hide' : ''); rn(inf._ch, ch); parent.appendChild(ch); }
-    });
-  })(boom, tree);
-}
-function mkTR(naam, cnt, depth, hasCh) {
-  var w = document.createElement('div'), row = document.createElement('div'); row.className = 'tr-row';
-  var tog = hasCh ? '<span class="tr-tog'+(depth<=0?' open':'')+'" onclick="event.stopPropagation();togN(this)">&#9654;</span>' : '<span class="tr-tog"></span>';
-  row.innerHTML = tog+'<span class="tr-ico">'+(depth<=0?'&#128193;':'&#128194;')+'</span><span class="tr-nm">'+naam+'</span><span class="tr-cnt">'+cnt+'</span>';
-  w.appendChild(row); return w;
-}
-function togN(el) { el.classList.toggle('open'); var ch = el.closest('.tr-row').parentElement.nextElementSibling; if (ch && ch.classList.contains('tr-ch')) ch.classList.toggle('hide'); }
-
-// === KOLOM UI ===
-function renderColChecks() {
-  var el = document.getElementById('colChecks');
-  if (!el) return;
-  var allCols = ALL_COLS.concat(customCols);
-  // Sorteer op opgeslagen volgorde
-  var orderMap = {};
-  colOrder.forEach(function(k,i) { orderMap[k] = i; });
-  allCols.sort(function(a,b) {
-    var ia = orderMap[a.k] !== undefined ? orderMap[a.k] : 999;
-    var ib = orderMap[b.k] !== undefined ? orderMap[b.k] : 999;
-    return ia - ib;
-  });
-  var html = '';
-  allCols.forEach(function(c,i) {
-    var checked = visibleColKeys.has(c.k) ? ' checked' : '';
-    var disabled = c.fixed ? ' disabled' : '';
-    var isCustom = c.custom || false;
-    html += '<div style="display:flex;align-items:center;gap:3px;padding:2px 0;font-size:11px" data-colkey="'+c.k+'">';
-    html += '<span style="display:flex;flex-direction:column;line-height:1;cursor:pointer;opacity:.4;font-size:8px;user-select:none" title="Verplaats">';
-    html += '<span onclick="moveCol(\''+c.k+'\',-1)">&#9650;</span><span onclick="moveCol(\''+c.k+'\',1)">&#9660;</span></span>';
-    html += '<input type="checkbox" data-ck="'+c.k+'"'+checked+disabled+' onchange="toggleCol(\''+c.k+'\')">';
-    html += '<span style="flex:1;cursor:pointer" onclick="this.previousElementSibling.click()">'+c.l+'</span>';
-    if (isCustom) html += '<span onclick="removeCustomCol(\''+c.k+'\')" style="color:#c0392b;cursor:pointer;font-size:13px" title="Verwijder">&times;</span>';
-    html += '</div>';
-  });
-  el.innerHTML = html;
-}
-function toggleCol(key) {
-  if (visibleColKeys.has(key)) visibleColKeys.delete(key); else visibleColKeys.add(key);
-  COLS = getCols();
-  saveColConfig();
-  vulFilters(); if (editMode) vulBulkFields(); bouwTH(); renderT();
-}
-function moveCol(key, dir) {
-  // Bouw huidige volgorde als die nog niet bestaat
-  if (!colOrder.length) {
-    colOrder = ALL_COLS.concat(customCols).map(function(c) { return c.k; });
-  }
-  var idx = colOrder.indexOf(key);
-  if (idx < 0) return;
-  var newIdx = idx + dir;
-  if (newIdx < 0 || newIdx >= colOrder.length) return;
-  colOrder.splice(idx, 1);
-  colOrder.splice(newIdx, 0, key);
-  COLS = getCols();
-  saveColConfig();
-  renderColChecks(); bouwTH(); renderT();
-}
-function addMetaCol() {
-  var hidden = ALL_COLS.filter(function(c) { return !visibleColKeys.has(c.k); });
-  if (!hidden.length) { alert('Alle metadata kolommen zijn al zichtbaar'); return; }
-  var msg = 'Kies een metadata kolom:\n\n' + hidden.map(function(c,i) { return (i+1) + '. ' + c.l; }).join('\n');
-  var keuze = prompt(msg);
-  if (!keuze) return;
-  var idx = parseInt(keuze) - 1;
-  if (idx >= 0 && idx < hidden.length) {
-    visibleColKeys.add(hidden[idx].k);
-    COLS = getCols();
-    saveColConfig();
-    vulFilters(); renderColChecks(); bouwTH(); renderT();
-  }
-}
-function addCustomCol() {
-  var naam = prompt('Naam voor de nieuwe kolom:');
-  if (!naam || !naam.trim()) return;
-  _customCounter++;
-  var key = 'custom_' + _customCounter + '_' + Date.now();
-  customCols.push({k:key, l:naam.trim(), w:'8%', custom:true});
-  visibleColKeys.add(key);
-  COLS = getCols();
-  saveColConfig();
-  renderColChecks(); bouwTH(); renderT();
-}
-function removeCustomCol(key) {
-  if (!confirm('Kolom verwijderen? Data gaat verloren.')) return;
-  customCols = customCols.filter(function(c) { return c.k !== key; });
-  visibleColKeys.delete(key);
-  // Verwijder data
-  for (var vid in customData) { if (customData[vid]) delete customData[vid][key]; }
-  COLS = getCols();
-  saveColConfig();
-  renderColChecks(); bouwTH(); renderT();
-}
-
-function bouwTH() {
-  var h = document.getElementById('tHead'); h.innerHTML = '';
-  var tr = document.createElement('tr');
-  // Checkbox kolom (altijd zichtbaar voor selectie/delen)
-  var thCb = document.createElement('th'); thCb.style.width = '30px';
-  var cb = document.createElement('input'); cb.type = 'checkbox';
-  cb.onchange = function() { var checked = cb.checked; var visible = filt(); visible.forEach(function(d) { if (checked) selectedDocs.add(d._vid); else selectedDocs.delete(d._vid); }); updateSelection(); document.querySelectorAll('.doc-cb').forEach(function(c) { c.checked = selectedDocs.has(c.dataset.vid); }); };
-  thCb.appendChild(cb); tr.appendChild(thCb);
-  COLS.forEach(function(c) {
-    var th = document.createElement('th');
-    th.innerHTML = c.l + ' <span class="sa">&#9650;</span><span class="col-resize" onmousedown="startResize(event,\''+c.k+'\')"></span>';
-    // Opgeslagen breedte of default
-    if (colWidths[c.k]) th.style.width = colWidths[c.k];
-    else if (c.w) th.style.width = c.w;
-    th.onclick = function(e) { if (e.target.classList.contains('col-resize')) return;
-      if (sortK===c.k) sortD = sortD==='asc'?'desc':'asc'; else { sortK=c.k; sortD='asc'; }
-      h.querySelectorAll('th').forEach(function(t){t.classList.remove('sorted')}); th.classList.add('sorted');
-      th.querySelector('.sa').innerHTML = sortD==='asc'?'&#9650;':'&#9660;'; renderT();
-    };
-    tr.appendChild(th);
-  });
-  h.appendChild(tr);
-}
-
-// === KOLOM RESIZE ===
-var _resizeCol = null, _resizeTh = null, _resizeStartX = 0, _resizeStartW = 0;
-function startResize(e, colKey) {
-  e.preventDefault(); e.stopPropagation();
-  _resizeCol = colKey;
-  _resizeTh = e.target.closest('th');
-  _resizeStartX = e.clientX;
-  _resizeStartW = _resizeTh.offsetWidth;
-  document.addEventListener('mousemove', doResize);
-  document.addEventListener('mouseup', endResize);
-}
-function doResize(e) {
-  if (!_resizeTh) return;
-  var w = Math.max(40, _resizeStartW + (e.clientX - _resizeStartX));
-  _resizeTh.style.width = w + 'px';
-}
-function endResize(e) {
-  if (_resizeTh && _resizeCol) {
-    colWidths[_resizeCol] = _resizeTh.style.width;
-    saveColConfig();
-  }
-  _resizeCol = null; _resizeTh = null;
-  document.removeEventListener('mousemove', doResize);
-  document.removeEventListener('mouseup', endResize);
-}
-
-// Helper: waarde van doc voor een kolom (metadata of custom)
-function docVal(doc, key) {
-  if (key.indexOf('custom_') === 0) return (customData[doc._vid] || {})[key] || '';
-  return doc[key] || '';
-}
-
-function resetFilters() {
-  document.getElementById('searchBox').value = '';
-  document.querySelectorAll('#filterRows select').forEach(function(sel) { sel.value = ''; });
-  document.getElementById('fGroep').value = '';
-  var mf = document.getElementById('fMetaFilter'); if (mf) mf.value = '';
-  var rf = document.getElementById('fRelease'); if (rf) rf.value = '';
-  actMap = null;
-  document.querySelectorAll('.tr-row').forEach(function(r) { r.classList.remove('act'); });
-  var alle = document.querySelector('.tr-row'); if (alle) alle.classList.add('act');
-  renderT();
-}
-
-function filt() {
-  var z = document.getElementById('searchBox').value.toLowerCase();
-  var metaFilter = (document.getElementById('fMetaFilter') || {}).value || '';
-  var relFilter = (document.getElementById('fRelease') || {}).value || '';
-  var VERPLICHT = ['bedrijf','discipline','titel','document_datum','document_status','document_nummer'];
-  // Verzamel actieve filters dynamisch
-  var activeFilters = [];
-  document.querySelectorAll('#filterRows select').forEach(function(sel) {
-    if (sel.value && sel.dataset.fk) activeFilters.push({k: sel.dataset.fk, v: sel.value});
-  });
-  var d = docs.filter(function(d) {
-    if (actMap && actMap.indexOf(d.file_location)===-1) return false;
-    for (var i = 0; i < activeFilters.length; i++) {
-      if (docVal(d, activeFilters[i].k) !== activeFilters[i].v) return false;
-    }
-    if (relFilter && (!d._releases || d._releases.indexOf(relFilter) === -1)) return false;
-    if (metaFilter === 'without') {
-      var heeftMeta = d.document_status || d.discipline || d.project_fase || d.document_datum;
-      if (heeftMeta) return false;
-    } else if (metaFilter === 'with') {
-      var heeftMeta2 = d.document_status || d.discipline || d.project_fase || d.document_datum;
-      if (!heeftMeta2) return false;
-    } else if (metaFilter === 'incomplete') {
-      var compleet = VERPLICHT.every(function(k) { return d[k] && d[k].trim && d[k].trim() !== '' && d[k] !== '--'; });
-      if (compleet) return false;
-    }
-    if (z) { var parts = []; getCols().forEach(function(c) { parts.push(docVal(d, c.k)); }); parts.push(d.file_location||''); var t = parts.join(' ').toLowerCase(); if (t.indexOf(z)===-1) return false; }
-    return true;
-  });
-  if (sortK) d.sort(function(a,b) { var va=docVal(a,sortK).toLowerCase(), vb=docVal(b,sortK).toLowerCase(); return sortD==='asc'?va.localeCompare(vb,'nl'):vb.localeCompare(va,'nl'); });
-  return d;
-}
-
-function renderT() {
-  bouwTH(); // Herbouw header (voor checkbox kolom toggle)
-  var body=document.getElementById('tBody'), nr=document.getElementById('noR'), filtered=filt();
-  body.innerHTML='';
-  if (!filtered.length) { nr.style.display='block'; document.getElementById('ftr1').textContent='0'; return; }
-  nr.style.display='none';
-
-  // Groepering bepalen
-  var groepVeld = document.getElementById('fGroep') ? document.getElementById('fGroep').value : 'file_location';
-  var pm = {};
-  if (groepVeld) {
-    filtered.forEach(function(d) { var g = docVal(d, groepVeld) || '(geen)'; if (!pm[g]) pm[g] = []; pm[g].push(d); });
-  } else {
-    pm[''] = filtered;
-  }
-
-  var grpIdx = 0;
-  Object.keys(pm).sort().forEach(function(mp) {
-    var gid = 'grp' + grpIdx++;
-    // Groepsheader
-    if (groepVeld && mp) {
-      var mtr = document.createElement('tr');
-      mtr.style.cursor = 'pointer';
-      mtr.onclick = function() {
-        var rows = document.querySelectorAll('.'+gid);
-        var hidden = rows.length && rows[0].style.display === 'none';
-        rows.forEach(function(r) { r.style.display = hidden ? '' : 'none'; });
-        var arrow = mtr.querySelector('.grp-arrow');
-        if (arrow) arrow.textContent = hidden ? '\u25BC' : '\u25B6';
-      };
-      if (groepVeld === 'file_location') {
-        var dl = mp.split('/').filter(function(d){return d;}), niv = Math.min(dl.length, 3);
-        mtr.className = 'mn' + niv;
-        var td = document.createElement('td'); td.colSpan = COLS.length + 1;
-        td.innerHTML = '<span class="grp-arrow" style="display:inline-block;width:16px;font-size:10px">\u25BC</span>' + (niv===1?'&#128193;':'&#128194;') + ' ' + mp + ' <span style="opacity:.5;font-weight:400">(' + pm[mp].length + ')</span>';
-      } else {
-        mtr.className = 'mn-meta';
-        var td = document.createElement('td'); td.colSpan = COLS.length + 1;
-        if (groepVeld === 'document_status') {
-          td.innerHTML = '<span class="grp-arrow" style="display:inline-block;width:16px;font-size:10px">\u25BC</span>' + sBdg(mp) + ' <span style="opacity:.5;font-weight:400;margin-left:8px">' + pm[mp].length + ' documenten</span>';
-        } else {
-          td.innerHTML = '<span class="grp-arrow" style="display:inline-block;width:16px;font-size:10px">\u25BC</span>' + mp + ' <span style="opacity:.5;font-weight:400">(' + pm[mp].length + ')</span>';
-        }
-      }
-      mtr.appendChild(td); body.appendChild(mtr);
-    }
-    pm[mp].forEach(function(doc) {
-      var tr = document.createElement('tr');
-      tr.className = gid;
-      tr.onclick = function(e) { if (e.target.tagName === 'INPUT') return; if (!editMode) toonDetail(doc); };
-      if (selDoc===doc) tr.classList.add('sel');
-
-      // Checkbox (altijd zichtbaar)
-      var tdCb = document.createElement('td'); tdCb.style.width = '30px'; tdCb.style.textAlign = 'center';
-      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = selectedDocs.has(doc._vid);
-      cb.className = 'doc-cb'; cb.dataset.vid = doc._vid;
-      cb.onchange = function(e) { e.stopPropagation(); if (cb.checked) selectedDocs.add(doc._vid); else selectedDocs.delete(doc._vid); updateSelection(); };
-      tdCb.appendChild(cb);
-      tr.appendChild(tdCb);
-
-      COLS.forEach(function(c) {
-        var td = document.createElement('td');
-        var isCustom = c.custom || false;
-        var v = isCustom ? ((customData[doc._vid]||{})[c.k]||'') : (doc[c.k] || '');
-
-        // Custom kolom: altijd bewerkbaar in edit mode
-        if (editMode && isCustom) {
-          var cinp = document.createElement('input'); cinp.type = 'text'; cinp.value = v;
-          cinp.style.cssText = 'width:100%;padding:2px 4px;border:1px solid #ddd;border-radius:3px;font-size:10px;font-family:Poppins,sans-serif;box-sizing:border-box';
-          cinp.onchange = (function(dk,vid){ return function(e) { e.stopPropagation(); if (!customData[vid]) customData[vid]={}; customData[vid][dk]=cinp.value; saveColConfig(); cinp.style.borderColor='var(--af)'; }; })(c.k, doc._vid);
-          cinp.onclick = function(e) { e.stopPropagation(); };
-          td.appendChild(cinp);
-        }
-        // Edit mode: bewerkbare metadata cellen
-        else if (editMode && doc._canEdit && EDITABLE_COLS.indexOf(c.k) >= 0) {
-          if (ENUM_VALUES[c.k]) {
-            // Dropdown
-            var sel = document.createElement('select');
-            sel.style.cssText = 'width:100%;padding:2px;border:1px solid #ddd;border-radius:3px;font-size:10px;font-family:Poppins,sans-serif';
-            ENUM_VALUES[c.k].forEach(function(opt) { var o = document.createElement('option'); o.value = opt; o.textContent = opt; if (opt === v) o.selected = true; sel.appendChild(o); });
-            sel.onchange = function(e) { e.stopPropagation(); sel.style.borderColor = 'var(--af)'; saveCell(doc, c.k, sel.value); };
-            td.appendChild(sel);
-          } else {
-            // Text input
-            var inp = document.createElement('input'); inp.type = c.k === 'document_datum' ? 'date' : 'text';
-            inp.value = v;
-            inp.style.cssText = 'width:100%;padding:2px 4px;border:1px solid #ddd;border-radius:3px;font-size:10px;font-family:Poppins,sans-serif;box-sizing:border-box';
-            inp.onchange = function(e) { e.stopPropagation(); inp.style.borderColor = 'var(--af)'; saveCell(doc, c.k, inp.value); };
-            inp.onclick = function(e) { e.stopPropagation(); };
-            td.appendChild(inp);
+    const seenIds = new Set();
+    for (const region of regionsToFetch) {
+      try {
+        const regionProjects = await fetchAllProjects(region);
+        for (const p of regionProjects) {
+          if (!seenIds.has(p.id)) {
+            seenIds.add(p.id);
+            projects.push({ id: p.id, name: p.name || 'Naamloos', members: p.usersCount || 0, updatedOn: p.updatedOn || p.modifiedOn || null, location: p.location || region, region: region, role: null, description: p.description || '', _regionKey: REGION_KEYS[region] || 'eu' });
           }
         }
-        // Normal mode
-        else if (c.k==='bestandsnaam' && pid && doc._vid) {
-          var a = document.createElement('a');
-          a.href = tcFileUrl(doc._vid, doc.bestandsnaam);
-          a.target='_blank'; a.textContent=v; a.title='Open in TC (laatste versie)';
-          a.onclick = function(e) { e.stopPropagation(); };
-          td.appendChild(a);
-        } else if (c.k==='document_status' && v) { td.innerHTML = sBdg(v); }
-        else if (c.k==='_created' && v) { td.textContent = fmtDate(v); td.style.fontSize = '10px'; td.style.color = '#888'; }
-        else { td.textContent = v; }
-        tr.appendChild(td);
-      });
-      body.appendChild(tr);
-    });
-  });
-  document.getElementById('ftr1').textContent = filtered.length + ' van ' + docs.length + ' documenten';
-  document.getElementById('ftr2').textContent = Object.keys(pm).length + ' mappen';
-}
-
-function fmtDate(s) {
-  if (!s) return '';
-  try { var d = new Date(s); return d.toLocaleDateString('nl-NL', {day:'2-digit',month:'2-digit',year:'numeric'}); } catch(e) { return s.substring(0,10); }
-}
-
-var EXT_3D = ['ifc','rvt','nwd','nwc','dgn','dwg','skp','fbx','obj','3ds'];
-function tcFileUrl(vid, naam) {
-  var ext = (naam || '').split('.').pop().toLowerCase();
-  if (EXT_3D.indexOf(ext) >= 0) return 'https://web.connect.trimble.com/projects/'+pid+'/detailviewer?fileId='+vid+'&versionId=';
-  return 'https://web.connect.trimble.com/projects/'+pid+'/viewer/2D?id='+vid+'&version=';
-}
-
-function sBdg(s) {
-  var sl=s.toLowerCase(), c='b-ov';
-  if (sl==='definitief') c='b-def'; else if (sl.indexOf('uitvoering')>=0) c='b-uit'; else if (sl==='concept') c='b-con'; else if (sl==='vervallen') c='b-ver';
-  return '<span class="bdg '+c+'">'+s+'</span>';
-}
-
-function toonDetail(doc) {
-  selDoc = doc;
-  document.getElementById('dPan').classList.add('vis');
-  document.querySelector('#dpHd h3').textContent = doc.bestandsnaam;
-  document.querySelector('#dpHd .dp-path').textContent = doc.file_location;
-  var velden = [['Document nummer',doc.document_nummer],['Titel',doc.titel],['Bouwdeel',doc.bouwdeel],['Discipline',doc.discipline],['Fase',doc.project_fase],['Status',doc.document_status],['Revisie',doc.revisie],['Datum',doc.document_datum],['Bedrijf',doc.bedrijf],['Document soort',doc.document_soort],['Tags',doc.tags]];
-  var html = '<div class="dp-sec"><h4>Metadata</h4>';
-  velden.forEach(function(f) { if (f[1]) { var d=f[1]; if (f[0]==='Status') d=sBdg(f[1]); html += '<div class="dp-row"><span class="dl">'+f[0]+'</span><span class="dv">'+d+'</span></div>'; } });
-  html += '</div>';
-  // Preview sectie
-  if (pid && doc._vid) {
-    var ext = (doc.bestandsnaam || '').split('.').pop().toLowerCase();
-    var EXT_IMG = ['png','jpg','jpeg','gif','bmp','webp','svg'];
-    var EXT_PDF = ['pdf'];
-    html += '<div class="dp-preview"><h4>Preview</h4><div id="dpPrev">';
-    if (EXT_PDF.indexOf(ext) >= 0 || EXT_IMG.indexOf(ext) >= 0) {
-      html += '<div class="no-prev">Laden...</div>';
-    } else if (EXT_3D.indexOf(ext) >= 0) {
-      html += '<div class="no-prev">3D bestanden: open in Trimble Connect</div>';
-    } else {
-      html += '<div class="no-prev">Geen preview beschikbaar voor .' + ext + '</div>';
+      } catch(e) { console.warn('Regio ' + region + ' mislukt:', e.message); }
     }
-    html += '</div></div>';
-    html += '<a class="dp-tc" href="'+tcFileUrl(doc._vid, doc.bestandsnaam)+'" target="_blank">Open in Trimble Connect &#8599;</a>';
-  }
-  document.getElementById('dpCnt').innerHTML = html;
-  // Laad preview async (iframe/img kan geen Authorization header sturen)
-  if (pid && doc._vid) {
-    var ext2 = (doc.bestandsnaam || '').split('.').pop().toLowerCase();
-    var EXT_IMG2 = ['png','jpg','jpeg','gif','bmp','webp','svg'];
-    if (['pdf'].indexOf(ext2) >= 0 || EXT_IMG2.indexOf(ext2) >= 0) {
-      laadPreview(doc._vid, doc.bestandsnaam, ext2, EXT_IMG2);
+
+    if (projects.length === 0) throw new Error('Geen projecten gevonden.');
+    if (!isRefresh) { updateStep(2, 'done', projects.length + ' projecten gevonden'); updateStep(3, 'active', 'Rollen controleren...'); }
+
+    showDashboard();
+    await loadRolesProgressively();
+    if (!isRefresh) { updateStep(3, 'done', 'Rollen geladen'); }
+  } catch(err) {
+    console.error('Laden mislukt:', err);
+    if (!isRefresh) {
+      const errorEl = document.getElementById('loadingError');
+      errorEl.style.display = ''; errorEl.innerHTML = '<strong>Fout:</strong> ' + err.message;
+      document.getElementById('btnFallback').style.display = '';
     }
   }
-  renderT();
+  isLoading = false;
 }
 
-async function laadPreview(vid, naam, ext, imgExts) {
-  var el = document.getElementById('dpPrev');
+// ============================================================
+//  ROLLEN PROGRESSIEF LADEN
+// ============================================================
+async function loadRolesProgressively() {
+  const PARALLEL = 5; let done = 0; const total = projects.length;
+  const progressBar = document.getElementById('progressBar');
+  const progressFill = document.getElementById('progressFill');
+  const progressPct = document.getElementById('progressPct');
+  progressBar.style.display = '';
+
+  const executing = new Set();
+  for (const project of projects) {
+    const task = (async () => {
+      try {
+        const users = await apiFetchPaginated(project.region, 'projects/' + project.id + '/users');
+        const me = findCurrentUser(users);
+        project.role = me?.role || 'USER';
+        project.members = users.filter(u => u.status === 'ACTIVE').length || project.members;
+      } catch(e) { project.role = '?'; }
+      done++;
+      progressFill.style.width = Math.round((done / total) * 100) + '%';
+      progressPct.textContent = done + '/' + total;
+      updateProjectRow(project);
+      updateStats();
+    })();
+    executing.add(task); task.finally(() => executing.delete(task));
+    if (executing.size >= PARALLEL) await Promise.race(executing);
+  }
+  await Promise.all(executing);
+  progressBar.style.display = 'none';
+}
+
+function findCurrentUser(users) {
+  if (!currentUser) return null;
+  if (currentUser.email) { const m = users.find(u => u.email?.toLowerCase() === currentUser.email.toLowerCase()); if (m) return m; }
+  if (currentUser.sub) { const m = users.find(u => u.tiduuid === currentUser.sub || u.id === currentUser.sub); if (m) return m; }
+  return null;
+}
+
+// ============================================================
+//  REFRESH
+// ============================================================
+async function refreshData() {
+  if (isLoading) return;
+  const btn = document.querySelector('.btn-refresh');
+  btn.classList.add('spinning'); btn.disabled = true;
+  try { await loadAllProjects(lastRegion, true); } catch(e) { console.error('Refresh mislukt:', e); }
+  btn.classList.remove('spinning'); btn.disabled = false;
+}
+
+// ============================================================
+//  LOADING UI
+// ============================================================
+function updateStep(num, status, text) {
+  const el = document.getElementById('step' + num);
   if (!el) return;
-  try {
-    var tcRegion = TC_BASE.indexOf('app21') >= 0 ? 'eu' : TC_BASE.indexOf('app31') >= 0 ? 'ap' : 'us';
-    var dlResp = await fetch(PROXY_BASE + '/tc/' + tcRegion + '/files/fs/' + vid + '/downloadurl', {
-      headers: { 'Authorization': 'Bearer ' + tcToken }
-    });
-    if (!dlResp.ok) { el.innerHTML = '<div class="no-prev">Preview laden mislukt</div>'; return; }
-    var dlData = await dlResp.json();
-    var resp = await fetch(dlData.url);
-    if (!resp.ok) { el.innerHTML = '<div class="no-prev">Preview laden mislukt</div>'; return; }
-    var blob = await resp.blob();
-    var objUrl = URL.createObjectURL(blob);
-    if (ext === 'pdf') {
-      el.innerHTML = '<a href="' + objUrl + '" target="_blank" style="display:block;padding:20px;text-align:center;background:#f5f0ea;border-radius:6px;border:1px solid #e8e0d8;color:var(--af);font-weight:600;font-size:13px;text-decoration:none">&#128196; PDF openen</a>';
-    } else {
-      el.innerHTML = '<img src="' + objUrl + '" alt="' + naam + '">';
+  if (status === 'active') { el.innerHTML = '&#9203; ' + text; el.className = 'step active'; }
+  else if (status === 'done') { el.innerHTML = '&#9989; ' + text; el.className = 'step done'; }
+  else if (status === 'error') { el.innerHTML = '&#10060; ' + text; el.className = 'step active'; }
+}
+
+function backToLogin() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('loadingError').style.display = 'none';
+  document.getElementById('btnFallback').style.display = 'none';
+  document.getElementById('loginScreen').style.display = '';
+  for (let i = 1; i <= 3; i++) { const el = document.getElementById('step' + i); if (el) { el.className = 'step'; el.innerHTML = ''; } }
+}
+
+// ============================================================
+//  DASHBOARD
+// ============================================================
+function showDashboard() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('headerRight').style.display = 'flex';
+  renderTable();
+  updateStats();
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = projects.length;
+  const adminCount = projects.filter(p => p.role === 'ADMIN').length;
+  document.getElementById('statAdmin').textContent = adminCount;
+  document.getElementById('statMembers').textContent = projects.reduce((s, p) => s + (p.members || 0), 0);
+  const visible = getFilteredProjects().length;
+  document.getElementById('projectCount').textContent = visible;
+  // Admin card active state
+  const adminCard = document.getElementById('statAdminCard');
+  if (adminCard) adminCard.classList.toggle('active-filter', document.getElementById('filterAdmin')?.checked);
+}
+
+// ============================================================
+//  TABEL
+// ============================================================
+function getFilteredProjects() {
+  let list = [...projects];
+  const query = document.getElementById('searchBox')?.value?.toLowerCase() || '';
+  if (query) list = list.filter(p => p.name.toLowerCase().includes(query));
+  if (document.getElementById('filterAdmin')?.checked) list = list.filter(p => p.role === 'ADMIN');
+  if (document.getElementById('filterFavorites')?.checked) list = list.filter(p => favorites.has(p.id));
+
+  list.sort((a, b) => {
+    // Favorieten altijd eerst (secondary sort)
+    if (favorites.size > 0) {
+      const fa = favorites.has(a.id) ? 0 : 1, fb = favorites.has(b.id) ? 0 : 1;
+      if (fa !== fb) return fa - fb;
     }
-  } catch(e) {
-    el.innerHTML = '<div class="no-prev">Preview laden mislukt</div>';
-  }
-}
-
-// === RELEASES PAGINA ===
-function toonReleases() {
-  goTo('pgRel');
-  renderReleases();
-}
-
-function renderReleases() {
-  var el = document.getElementById('relContent');
-  if (!releases.length) {
-    el.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#888"><div style="font-size:48px;margin-bottom:12px">&#128230;</div><h2 style="font-family:Montserrat,sans-serif;font-size:18px;color:#222;margin-bottom:8px">Geen releases</h2><p style="font-size:13px">Dit project heeft nog geen releases in Trimble Connect.</p></div>';
-    return;
-  }
-  var html = '<div style="padding:24px"><h2 style="font-family:Montserrat,sans-serif;font-size:18px;margin-bottom:16px">Releases <span style="font-size:13px;color:#888;font-weight:400">(' + releases.length + ')</span></h2>';
-  html += '<div class="dash-grid">';
-  releases.forEach(function(rel) {
-    var stClass = rel.status === 'SENT' ? 'b-def' : 'b-con';
-    var stLabel = rel.status === 'SENT' ? 'Verzonden' : 'Open';
-    var dt = rel.dueDate ? fmtDate(rel.dueDate) : '';
-    html += '<div class="dcard" style="cursor:pointer" onclick="toonReleaseDetail(\'' + rel.id + '\')">' +
-      '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">' +
-      '<h3 style="font-size:14px;font-weight:700;font-family:Montserrat,sans-serif;margin:0">' + rel.name + '</h3>' +
-      '<span class="bdg ' + stClass + '">' + stLabel + '</span></div>' +
-      '<div style="font-size:12px;color:#888">' + rel.filesCount + ' bestanden' + (dt ? ' &middot; ' + dt : '') + '</div>' +
-      (rel.notes ? '<div style="font-size:11px;color:#aaa;margin-top:4px">' + rel.notes + '</div>' : '') +
-      '</div>';
-  });
-  html += '</div></div>';
-  el.innerHTML = html;
-}
-
-function toonReleaseDetail(relId) {
-  var rel = releases.find(function(r) { return r.id === relId; });
-  if (!rel) return;
-  var el = document.getElementById('relContent');
-  var stClass = rel.status === 'SENT' ? 'b-def' : 'b-con';
-  var stLabel = rel.status === 'SENT' ? 'Verzonden' : 'Open';
-  var dt = rel.dueDate ? fmtDate(rel.dueDate) : '';
-
-  var html = '<div style="padding:24px">';
-  html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">';
-  html += '<button onclick="renderReleases()" style="padding:4px 12px;background:rgba(0,0,0,.05);border:none;border-radius:6px;cursor:pointer;font-family:Poppins,sans-serif;font-size:12px">&#8592; Alle releases</button>';
-  html += '<h2 style="font-family:Montserrat,sans-serif;font-size:18px;margin:0">' + rel.name + '</h2>';
-  html += '<span class="bdg ' + stClass + '">' + stLabel + '</span>';
-  html += '</div>';
-  html += '<div style="display:flex;gap:12px;margin-bottom:16px;font-size:12px;color:#888">';
-  html += '<span>' + rel.filesCount + ' bestanden</span>';
-  if (dt) html += '<span>Deadline: ' + dt + '</span>';
-  if (rel.notes) html += '<span>' + rel.notes + '</span>';
-  html += '</div>';
-  html += '<div style="display:flex;gap:8px;margin-bottom:16px">';
-  html += '<button class="nav-btn" style="width:auto;padding:8px 20px;font-size:12px" onclick="downloadRelease(\'' + rel.id + '\')">&#128230; Download ZIP + CSV</button>';
-  html += '<button class="nav-btn sec" style="width:auto;padding:8px 20px;font-size:12px" onclick="exportReleaseCSV(\'' + rel.id + '\')">&#11015; Alleen CSV</button>';
-  html += '<button class="nav-btn sec" style="width:auto;padding:8px 20px;font-size:12px" onclick="shareRelease(\'' + rel.id + '\')">&#128228; Delen</button>';
-  html += '</div>';
-
-  // Bestanden tabel
-  html += '<table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)">';
-  html += '<thead><tr style="background:var(--gr);text-align:left"><th style="padding:8px 12px">Bestandsnaam</th><th style="padding:8px">Revisie</th><th style="padding:8px">Gewijzigd</th></tr></thead><tbody>';
-  rel.files.forEach(function(f) {
-    // Zoek doc in hoofdlijst voor extra metadata
-    var doc = docs.find(function(d) { return d._vid === f.id; });
-    var naam = f.name || (doc ? doc.bestandsnaam : '');
-    var rev = f.revision || '';
-    var mod = f.modifiedOn ? fmtDate(f.modifiedOn) : '';
-    html += '<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:8px 12px">';
-    if (pid && f.id) {
-      html += '<a href="' + tcFileUrl(f.id, naam) + '" target="_blank" style="color:var(--af);text-decoration:none">' + naam + '</a>';
-    } else { html += naam; }
-    html += '</td><td style="padding:8px">' + rev + '</td><td style="padding:8px;color:#888">' + mod + '</td></tr>';
-  });
-  html += '</tbody></table></div>';
-  el.innerHTML = html;
-}
-
-function exportReleaseCSV(relId) {
-  var rel = releases.find(function(r) { return r.id === relId; });
-  if (!rel) return;
-  var rows = [['Bestandsnaam','Revisie','Gewijzigd','Release','Status'].join(';')];
-  rel.files.forEach(function(f) {
-    var naam = f.name || '';
-    var rev = f.revision || '';
-    var mod = f.modifiedOn ? fmtDate(f.modifiedOn) : '';
-    rows.push(['"'+naam+'"',rev,'"'+mod+'"','"'+rel.name+'"','"'+rel.status+'"'].join(';'));
-  });
-  var blob = new Blob(['\ufeff' + rows.join('\n')], {type:'text/csv;charset=utf-8;'});
-  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'release_' + rel.name.replace(/[^a-zA-Z0-9-_ ]/g,'') + '.csv'; a.click();
-}
-
-async function downloadRelease(relId) {
-  var rel = releases.find(function(r) { return r.id === relId; });
-  if (!rel || !rel.files.length) { alert('Geen bestanden in deze release'); return; }
-  if (!confirm('Download ' + rel.files.length + ' bestanden uit "' + rel.name + '" als ZIP?')) return;
-
-  var btn = event.target; btn.textContent = '⏳ 0/' + rel.files.length; btn.disabled = true;
-  var zip = new JSZip();
-  var downloaded = 0, failed = 0;
-
-  for (var i = 0; i < rel.files.length; i++) {
-    var f = rel.files[i];
-    // Zoek het bestand in onze docs lijst (meerdere ID velden proberen)
-    var fileId = f.fileId || f.id || '';
-    var doc = docs.find(function(d) { return d._vid === fileId; }) || docs.find(function(d) { return d.bestandsnaam === f.name; });
-    var dlFileId = (doc && doc._vid) ? doc._vid : fileId;
-    if (!dlFileId) { console.warn('[Release DL] Geen fileId voor:', f.name, f); failed++; continue; }
-    try {
-      var tcRegion = TC_BASE.indexOf('app21') >= 0 ? 'eu' : TC_BASE.indexOf('app31') >= 0 ? 'ap' : 'us';
-      var dlResp = await fetch(PROXY_BASE + '/tc/' + tcRegion + '/files/fs/' + dlFileId + '/downloadurl', { headers: { 'Authorization': 'Bearer ' + tcToken } });
-      if (!dlResp.ok) { console.warn('[Release DL] downloadurl mislukt:', dlFileId, dlResp.status); failed++; continue; }
-      var dlData = await dlResp.json();
-      var resp = await fetch(dlData.url);
-      if (!resp.ok) { failed++; continue; }
-      zip.file(f.name || ('file_' + i), await resp.blob());
-      downloaded++;
-    } catch(e) { console.warn('[Release DL] Fout:', f.name, e.message); failed++; }
-    btn.textContent = '⏳ ' + (downloaded + failed) + '/' + rel.files.length;
-  }
-
-  // CSV toevoegen aan ZIP
-  var csvRows = [['Bestandsnaam','Revisie','Gewijzigd'].join(';')];
-  rel.files.forEach(function(f) { csvRows.push(['"'+(f.name||'')+'"',f.revision||'','"'+fmtDate(f.modifiedOn||'')+'"'].join(';')); });
-  zip.file('_documentenlijst_' + rel.name.replace(/[^a-zA-Z0-9-_ ]/g,'') + '.csv', '\ufeff' + csvRows.join('\n'));
-
-  btn.textContent = '⏳ ZIP maken...';
-  try {
-    var content = await zip.generateAsync({ type: 'blob' });
-    var a = document.createElement('a'); a.href = URL.createObjectURL(content);
-    a.download = 'release_' + rel.name.replace(/[^a-zA-Z0-9-_ ]/g,'') + '_' + downloaded + '_bestanden.zip'; a.click();
-  } catch(e) { alert('ZIP aanmaken mislukt: ' + e.message); }
-
-  btn.textContent = '📦 Download ZIP + CSV'; btn.disabled = false;
-  if (failed > 0) alert(downloaded + ' gedownload, ' + failed + ' mislukt.');
-}
-
-function exportCSV() {
-  var d = filt(), h = COLS.map(function(c){return c.l;}).concat(['Map']);
-  var rows = d.map(function(doc) { return COLS.map(function(c){return '"'+(doc[c.k]||'').replace(/"/g,'""')+'"';}).concat(['"'+(doc.file_location||'')+'"']); });
-  var csv = [h.join(';')].concat(rows.map(function(r){return r.join(';');})).join('\n');
-  var blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
-  var a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='documentenlijst.csv'; a.click();
-}
-
-// === ZIP DOWNLOAD ===
-async function downloadZIP() {
-  var filtered = filt();
-  if (!filtered.length) { alert('Geen documenten om te downloaden'); return; }
-  if (!confirm('Download ' + filtered.length + ' bestanden als ZIP?\n\nDit kan even duren bij grote bestanden.')) return;
-
-  var zipBtn = document.getElementById('zipBtn');
-  zipBtn.textContent = '⏳ 0/' + filtered.length;
-  zipBtn.disabled = true;
-
-  var zip = new JSZip();
-  var downloaded = 0, failed = 0;
-
-  for (var i = 0; i < filtered.length; i++) {
-    var doc = filtered[i];
-    if (!doc._vid) { failed++; continue; }
-    try {
-      // Stap 1: haal signed download URL op via TC API
-      var tcRegion = TC_BASE.indexOf('app21') >= 0 ? 'eu' : TC_BASE.indexOf('app31') >= 0 ? 'ap' : 'us';
-      var dlUrlResp = await fetch(PROXY_BASE + '/tc/' + tcRegion + '/files/fs/' + doc._vid + '/downloadurl', {
-        headers: { 'Authorization': 'Bearer ' + tcToken }
-      });
-      if (!dlUrlResp.ok) { console.warn('[ZIP] Download URL mislukt:', doc.bestandsnaam, dlUrlResp.status); failed++; continue; }
-      var dlData = await dlUrlResp.json();
-      // Stap 2: download bestand via signed URL (geen auth nodig)
-      var resp = await fetch(dlData.url);
-      if (!resp.ok) { failed++; continue; }
-      var blob = await resp.blob();
-      // Mapstructuur op basis van actieve groepering
-      var groepVeld = document.getElementById('fGroep') ? document.getElementById('fGroep').value : '';
-      var folder = '';
-      if (groepVeld && doc[groepVeld]) folder = doc[groepVeld];
-      var path = folder ? folder + '/' + doc.bestandsnaam : doc.bestandsnaam;
-      zip.file(path, blob);
-      downloaded++;
-    } catch(e) {
-      console.warn('[ZIP] Download mislukt:', doc.bestandsnaam, e.message);
-      failed++;
+    let va, vb;
+    switch (sortColumn) {
+      case 'favorite': va = favorites.has(a.id) ? 0 : 1; vb = favorites.has(b.id) ? 0 : 1; break;
+      case 'name': va = a.name.toLowerCase(); vb = b.name.toLowerCase(); break;
+      case 'role': va = a.role === 'ADMIN' ? 0 : 1; vb = b.role === 'ADMIN' ? 0 : 1; break;
+      case 'members': va = a.members || 0; vb = b.members || 0; break;
+      case 'activity': va = a.updatedOn ? new Date(a.updatedOn).getTime() : 0; vb = b.updatedOn ? new Date(b.updatedOn).getTime() : 0; break;
+      case 'region': va = a.location || ''; vb = b.location || ''; break;
+      default: va = a.name; vb = b.name;
     }
-    zipBtn.textContent = '⏳ ' + (downloaded + failed) + '/' + filtered.length;
-  }
-
-  // Voeg documentenlijst CSV toe aan de ZIP
-  var csvH = COLS.map(function(c){return c.l;}).concat(['Map']);
-  var csvRows = filtered.map(function(doc) { return COLS.map(function(c){return '"'+(doc[c.k]||'').replace(/"/g,'""')+'"';}).concat(['"'+(doc.file_location||'')+'"']); });
-  var csvContent = '\ufeff' + [csvH.join(';')].concat(csvRows.map(function(r){return r.join(';');})).join('\n');
-  zip.file('_documentenlijst.csv', csvContent);
-
-  // Genereer en download ZIP
-  zipBtn.textContent = '⏳ ZIP maken...';
-  try {
-    var content = await zip.generateAsync({ type: 'blob' });
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(content);
-    var projNaam = (tcProject && tcProject.name) ? tcProject.name.replace(/[^a-zA-Z0-9-_ ]/g, '') : 'documenten';
-    a.download = projNaam + '_' + downloaded + '_bestanden.zip';
-    a.click();
-  } catch(e) {
-    alert('ZIP aanmaken mislukt: ' + e.message);
-  }
-
-  zipBtn.textContent = '📦 ZIP';
-  zipBtn.disabled = false;
-  if (failed > 0) alert(downloaded + ' bestanden gedownload, ' + failed + ' mislukt.');
-}
-
-// === EDIT MODE ===
-var ENUM_VALUES = {
-  document_status: ['--','Concept','Voorlopig','Definitief','Vervallen','Voor ontwerp','Voor uitvoering','As built','Intern'],
-  discipline: ['--','Opdrachtgever','Architect','Constructeur','Installateur','Adviseur','Hoofdaannemer','Onderaannemer','Leverancier','Overheid','Nuts','Directievoering','Overig'],
-  project_fase: ['--','Initiatief','Project definitie','Structuur ontwerp','Voorlopig ontwerp','Definitief ontwerp','Technisch ontwerp','Prijs en contractvorming','Uitvoeringsgereed ontwerp','Realisatie','Gebruik en exploitatie','Project (alle fasen)'],
-};
-var EDITABLE_COLS = ['document_status','discipline','project_fase','bouwdeel','document_nummer','titel','document_datum','revisie','bedrijf'];
-
-function toggleEditMode() {
-  if (!editMode) {
-    if (!confirm('Metadata bewerken?\n\nWijzigingen worden direct opgeslagen in Trimble Connect.')) return;
-    editMode = true;
-    document.getElementById('editBtn').innerHTML = '&#128275; Vergrendelen';
-    document.getElementById('editBtn').style.background = 'var(--warn)';
-    document.getElementById('editBar').style.display = 'flex';
-    vulBulkFields();
-  } else {
-    editMode = false;
-    selectedDocs.clear();
-    document.getElementById('editBtn').innerHTML = '&#128274; Bewerken';
-    document.getElementById('editBtn').style.background = '';
-    document.getElementById('editBar').style.display = 'none';
-  }
-  renderT();
-}
-
-function updateSelection() {
-  var bar = document.getElementById('editBar');
-  var cnt = selectedDocs.size;
-  document.getElementById('editSelCount').textContent = cnt + ' geselecteerd';
-  bar.style.display = (editMode && cnt > 0) ? 'flex' : (editMode ? 'flex' : 'none');
-  if (cnt === 0) document.getElementById('editSelCount').textContent = 'Selecteer bestanden om bulk te bewerken';
-  // Delen knop: altijd zichtbaar als bestanden geselecteerd (ongeacht edit mode)
-  var shareBtn = document.getElementById('shareBtn');
-  if (shareBtn) shareBtn.style.display = cnt > 0 ? 'block' : 'none';
-}
-
-// Bulk field change → populate values dropdown
-function vulBulkFields() {
-  var bf = document.getElementById('bulkField');
-  if (!bf) return;
-  var cur = bf.value;
-  bf.innerHTML = '<option value="">Veld kiezen...</option>';
-  getCols().forEach(function(c) {
-    if (c.fixed || c.custom) return; // bestandsnaam en eigen kolommen overslaan
-    if (EDITABLE_COLS.indexOf(c.k) < 0) return; // alleen bewerkbare velden
-    var o = document.createElement('option'); o.value = c.k; o.textContent = c.l; bf.appendChild(o);
+    if (va < vb) return sortAsc ? -1 : 1;
+    if (va > vb) return sortAsc ? 1 : -1;
+    return 0;
   });
-  bf.value = cur;
+  return list;
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  var bf = document.getElementById('bulkField');
-  if (bf) bf.addEventListener('change', function() {
-    var bv = document.getElementById('bulkValue');
-    bv.innerHTML = '<option value="">Waarde kiezen...</option>';
-    var field = bf.value;
-    if (ENUM_VALUES[field]) {
-      ENUM_VALUES[field].forEach(function(v) { var o = document.createElement('option'); o.value = v; o.textContent = v; bv.appendChild(o); });
-    } else {
-      bv.innerHTML = '<option value="">Typ in de tabel</option>';
-    }
-  });
-});
+function renderTable() {
+  const list = getFilteredProjects();
+  const tbody = document.getElementById('projectBody');
+  const empty = document.getElementById('emptyState');
+  if (list.length === 0) { tbody.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
 
-async function bulkSave() {
-  var field = document.getElementById('bulkField').value;
-  var value = document.getElementById('bulkValue').value;
-  if (!field || !value) { alert('Kies een veld en waarde'); return; }
+  tbody.innerHTML = list.map(p => {
+    const isFav = favorites.has(p.id);
+    const isCurrent = currentProjectId && p.id === currentProjectId;
+    const roleBadge = p.role === 'ADMIN' ? '<span class="badge badge-admin">Admin</span>' : p.role === null ? '<span class="badge badge-loading">laden...</span>' : p.role === '?' ? '<span class="badge badge-user">?</span>' : '<span class="badge badge-user">User</span>';
+    const regionLabel = REGION_LABELS[p.region] || p.location || '?';
+    const dateStr = formatRelativeDate(p.updatedOn);
+    const isRecent = p.updatedOn && (Date.now() - new Date(p.updatedOn).getTime()) < 7 * 24 * 60 * 60 * 1000;
+    const url = 'https://web.connect.trimble.com/projects/' + p.id;
+    const tooltip = p.description ? ' data-tooltip="' + escapeHtml(p.description).replace(/"/g, '&quot;') + '"' : '';
+    const currentBadge = isCurrent ? '<span class="badge-current">huidig</span>' : '';
 
-  var propId = null;
-  for (var id in PROP_MAP) { if (PROP_MAP[id] === field) { propId = id; break; } }
-  if (!propId) { alert('Veld niet gevonden in property mapping'); return; }
+    return '<tr data-id="' + p.id + '"' + (isCurrent ? ' class="current-project"' : '') + '>' +
+      '<td class="fav-cell ' + (isFav ? 'active' : '') + '" onclick="event.stopPropagation();toggleFavorite(\'' + p.id + '\')">' + (isFav ? '&#9733;' : '&#9734;') + '</td>' +
+      '<td><a href="' + url + '" target="_blank" class="project-link"' + tooltip + ' title="' + (p.description || 'Open in Trimble Connect') + '">' + escapeHtml(p.name) + '</a>' + currentBadge + '</td>' +
+      '<td>' + roleBadge + '</td>' +
+      '<td class="members-cell">' + p.members + '</td>' +
+      '<td class="date-cell ' + (isRecent ? 'recent' : '') + '" title="' + (p.updatedOn || '') + '">' + dateStr + '</td>' +
+      '<td class="col-region"><span class="badge badge-region">' + regionLabel + '</span></td>' +
+      '</tr>';
+  }).join('');
 
-  var statusEl = document.getElementById('bulkStatus');
-  var toSave = docs.filter(function(d) { return selectedDocs.has(d._vid) && d._canEdit; });
-  statusEl.textContent = 'Opslaan: 0/' + toSave.length;
+  // Sort headers
+  document.querySelectorAll('.project-table thead th').forEach(th => th.classList.remove('sorted'));
+  const colMap = { favorite: 'sortFavorite', name: 'sortName', role: 'sortRole', members: 'sortMembers', activity: 'sortActivity', region: 'sortRegion' };
+  const arrow = document.getElementById(colMap[sortColumn]);
+  if (arrow) { arrow.parentElement.classList.add('sorted'); arrow.innerHTML = sortAsc ? '&#9650;' : '&#9660;'; }
+}
 
-  var libId = 'tcproject:prod:' + pid;
-  // Bouw één changeset voor alle bestanden (max 500 per batch)
-  var changeItems = toSave.map(function(doc) {
-    var props = {}; props[propId] = value;
-    return { link: doc._psetLink || 'frn:tcfile:' + doc._vid, libId: libId, defId: 'tcfiles', props: props };
-  });
-  statusEl.textContent = 'Opslaan: ' + toSave.length + ' bestanden...';
-  var saved = 0;
-  try {
-    var resp = await fetch(PSET_BASE + '/psets/changeset', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + tcToken, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: changeItems })
-    });
-    if (!resp.ok) throw new Error(resp.status + ' ' + resp.statusText);
-    toSave.forEach(function(doc) { doc[field] = value; });
-    saved = toSave.length;
-  } catch(e) {
-    console.warn('[TC] Bulk opslaan mislukt:', e.message);
-    alert('Opslaan mislukt: ' + e.message);
+function updateProjectRow(project) {
+  const row = document.querySelector('tr[data-id="' + project.id + '"]');
+  if (!row) return;
+  const cells = row.querySelectorAll('td');
+  if (cells.length < 5) return;
+  // cells[0]=fav, cells[1]=name, cells[2]=role, cells[3]=members
+  if (project.role === 'ADMIN') cells[2].innerHTML = '<span class="badge badge-admin">Admin</span>';
+  else if (project.role === '?') cells[2].innerHTML = '<span class="badge badge-user">?</span>';
+  else cells[2].innerHTML = '<span class="badge badge-user">User</span>';
+  cells[3].textContent = project.members;
+}
+
+// ============================================================
+//  SORTEREN & FILTEREN
+// ============================================================
+function sortBy(column) {
+  if (sortColumn === column) sortAsc = !sortAsc;
+  else { sortColumn = column; sortAsc = column === 'activity' ? false : true; }
+  const labels = { favorite: 'Favoriet', name: 'Naam', role: 'Rol', members: 'Leden', activity: 'Activiteit', region: 'Regio' };
+  document.getElementById('sortInfo').textContent = 'Sorteer: ' + (labels[column] || column) + (sortAsc ? ' (A-Z)' : ' (Z-A)');
+  renderTable();
+}
+
+function filterProjects() { renderTable(); updateStats(); }
+
+function clearAllFilters() {
+  document.getElementById('searchBox').value = '';
+  document.getElementById('filterAdmin').checked = false;
+  document.getElementById('filterFavorites').checked = false;
+  filterProjects();
+}
+
+function toggleAdminFilter() {
+  const cb = document.getElementById('filterAdmin');
+  cb.checked = !cb.checked;
+  filterProjects();
+}
+
+// ============================================================
+//  UITLOGGEN
+// ============================================================
+function logout() {
+  token = null; currentUser = null; projects = [];
+  sessionStorage.removeItem('tc_token'); sessionStorage.removeItem('tc_region');
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('headerRight').style.display = 'none';
+  document.getElementById('loginScreen').style.display = '';
+  document.getElementById('tokenInput').value = '';
+}
+
+// ============================================================
+//  EXPORT NAAR EXCEL (XML Spreadsheet)
+// ============================================================
+function exportToExcel() {
+  const list = getFilteredProjects();
+  const today = new Date().toISOString().slice(0, 10);
+
+  function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  xml += '<?mso-application progid="Excel.Sheet"?>\n';
+  xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
+  xml += '<Styles>\n';
+  xml += '  <Style ss:ID="header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#D4821A" ss:Pattern="Solid"/></Style>\n';
+  xml += '  <Style ss:ID="admin"><Font ss:Bold="1" ss:Color="#D4821A"/></Style>\n';
+  xml += '  <Style ss:ID="date"><NumberFormat ss:Format="yyyy-mm-dd hh:mm"/></Style>\n';
+  xml += '</Styles>\n';
+  xml += '<Worksheet ss:Name="Projecten">\n<Table>\n';
+  xml += '  <Column ss:Width="30"/><Column ss:Width="250"/><Column ss:Width="60"/><Column ss:Width="50"/><Column ss:Width="120"/><Column ss:Width="40"/><Column ss:Width="300"/>\n';
+
+  // Header
+  xml += '  <Row ss:StyleID="header">';
+  ['Favoriet', 'Projectnaam', 'Rol', 'Leden', 'Laatste activiteit', 'Regio', 'URL'].forEach(h => { xml += '<Cell><Data ss:Type="String">' + esc(h) + '</Data></Cell>'; });
+  xml += '</Row>\n';
+
+  // Data
+  for (const p of list) {
+    const isFav = favorites.has(p.id) ? 'Ja' : '';
+    const role = p.role || '?';
+    const date = p.updatedOn ? p.updatedOn.replace('T', ' ').substring(0, 16) : '';
+    const region = REGION_LABELS[p.region] || p.location || '';
+    const url = 'https://web.connect.trimble.com/projects/' + p.id;
+
+    xml += '  <Row>';
+    xml += '<Cell><Data ss:Type="String">' + esc(isFav) + '</Data></Cell>';
+    xml += '<Cell><Data ss:Type="String">' + esc(p.name) + '</Data></Cell>';
+    xml += '<Cell' + (role === 'ADMIN' ? ' ss:StyleID="admin"' : '') + '><Data ss:Type="String">' + esc(role) + '</Data></Cell>';
+    xml += '<Cell><Data ss:Type="Number">' + (p.members || 0) + '</Data></Cell>';
+    xml += '<Cell><Data ss:Type="String">' + esc(date) + '</Data></Cell>';
+    xml += '<Cell><Data ss:Type="String">' + esc(region) + '</Data></Cell>';
+    xml += '<Cell><Data ss:Type="String">' + esc(url) + '</Data></Cell>';
+    xml += '</Row>\n';
   }
-  statusEl.textContent = saved + ' bestanden opgeslagen';
-  selectedDocs.clear();
-  updateSelection();
-  renderT();
-  setTimeout(function() { statusEl.textContent = ''; }, 3000);
+
+  xml += '</Table>\n</Worksheet>\n</Workbook>';
+
+  const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'TC_Dashboard_' + today + '.xls';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
-async function saveCell(doc, field, value) {
-  var propId = null;
-  for (var id in PROP_MAP) { if (PROP_MAP[id] === field) { propId = id; break; } }
-  if (!propId) return;
-
-  var libId = 'tcproject:prod:' + pid;
-  var props = {}; props[propId] = value;
-  var link = doc._psetLink || 'frn:tcfile:' + doc._vid;
-  try {
-    var resp = await fetch(PSET_BASE + '/psets/changeset', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + tcToken, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: [{ link: link, libId: libId, defId: 'tcfiles', props: props }] })
-    });
-    if (!resp.ok) throw new Error(resp.status + ' ' + resp.statusText);
-    doc[field] = value;
-    console.log('[TC] Opgeslagen:', doc.bestandsnaam, field, '=', value);
-  } catch(e) {
-    console.warn('[TC] Opslaan mislukt:', e.message);
-    alert('Opslaan mislukt: ' + e.message);
-  }
+// ============================================================
+//  HULPFUNCTIES
+// ============================================================
+function formatRelativeDate(dateStr) {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr), now = new Date(), ms = now - d;
+  const min = Math.floor(ms / 60000), hrs = Math.floor(ms / 3600000), days = Math.floor(ms / 86400000);
+  if (min < 1) return 'Zojuist';
+  if (min < 60) return min + ' min geleden';
+  if (hrs < 24) return hrs + ' uur geleden';
+  if (days < 7) return days + ' dag' + (days > 1 ? 'en' : '') + ' geleden';
+  if (days < 30) return Math.floor(days / 7) + (Math.floor(days / 7) === 1 ? ' week' : ' weken') + ' geleden';
+  if (days < 365) return Math.floor(days / 30) + ' maand' + (Math.floor(days / 30) > 1 ? 'en' : '') + ' geleden';
+  return Math.floor(days / 365) + ' jaar geleden';
 }
 
-// === DELEN ===
-var _lastShareUrl = '', _lastShareDocs = [], _lastShareLinks = [];
-
-function shareRelease(relId) {
-  var rel = releases.find(function(r) { return r.id === relId; });
-  if (!rel || !rel.files.length) { alert('Geen bestanden in deze release'); return; }
-  // Maak een selectie van de release bestanden zodat openShareDialog ze oppakt
-  selectedDocs.clear();
-  rel.files.forEach(function(f) {
-    var fid = f.fileId || f.id || '';
-    var doc = docs.find(function(d) { return d._vid === fid; }) || docs.find(function(d) { return d.bestandsnaam === f.name; });
-    if (doc) selectedDocs.add(doc._vid);
-  });
-  openShareDialog();
-}
-
-function openShareDialog() {
-  var selDocs = docs.filter(function(d) { return selectedDocs.has(d._vid); });
-  if (!selDocs.length) { alert('Selecteer eerst bestanden om te delen'); return; }
-  _lastShareDocs = selDocs;
-  // Vul bestandslijst
-  var list = document.getElementById('shareFileList');
-  var namen = selDocs.map(function(d) { return d.bestandsnaam; });
-  if (namen.length <= 10) { list.textContent = namen.join('\n'); }
-  else { list.textContent = namen.slice(0, 10).join('\n') + '\n... en ' + (namen.length - 10) + ' meer'; }
-  // Reset form
-  document.getElementById('shareEmails').value = '';
-  document.getElementById('shareMsg').value = '';
-  document.getElementById('sharePerm').value = 'VIEW';
-  document.getElementById('shareMode').value = 'REGISTERED_USERS';
-  var defExpiry = new Date(); defExpiry.setDate(defExpiry.getDate() + 14);
-  document.getElementById('shareExpiry').value = defExpiry.toISOString().split('T')[0];
-  updateShareModeInfo();
-  document.getElementById('shareForm').style.display = '';
-  document.getElementById('shareSuccess').style.display = 'none';
-  document.getElementById('shareModal').classList.add('vis');
-}
-
-function updateShareModeInfo() {
-  var mode = document.getElementById('shareMode').value;
-  var el = document.getElementById('shareModeInfo');
-  if (mode === 'REGISTERED_USERS') {
-    el.style.background = '#cce5ff'; el.style.color = '#004085';
-    el.innerHTML = '&#128274; Ontvanger moet inloggen met Trimble ID. Toegang wordt gelogd.';
-  } else if (mode === 'PUBLIC') {
-    el.style.background = '#fff3cd'; el.style.color = '#856404';
-    el.innerHTML = '&#9888; <b>Openbaar!</b> Iedereen met de link kan de bestanden openen zonder login. Alleen aanmaak wordt gelogd, niet wie het opent.';
-  } else {
-    el.style.background = '#d4edda'; el.style.color = '#155724';
-    el.innerHTML = '&#128274; Alleen bestaande projectleden kunnen de bestanden openen.';
-  }
-}
-
-function closeShareDialog() {
-  document.getElementById('shareModal').classList.remove('vis');
-}
-
-async function sendShare(method) {
-  var emails = document.getElementById('shareEmails').value.split(',').map(function(e) { return e.trim(); }).filter(function(e) { return e && e.indexOf('@') > 0; });
-  var msg = document.getElementById('shareMsg').value;
-  var perm = document.getElementById('sharePerm').value;
-  var shareMode = document.getElementById('shareMode').value;
-  var expiry = document.getElementById('shareExpiry').value;
-
-  // TC methode vereist emails
-  if (method === 'tc' && !emails.length) { alert('Vul minstens één email adres in voor TC verzending'); return; }
-  // PROJECT_USERS vereist TC methode
-  if (shareMode === 'PROJECT_USERS' && method === 'email') { alert('Delen met projectleden werkt alleen via Trimble Connect, niet via eigen email.'); return; }
-
-  // Waarschuwing per mode
-  var confirmMsg = '';
-  if (shareMode === 'PUBLIC') {
-    confirmMsg = '⚠️ LET OP: OPENBAAR DELEN\n\nDeze ' + _lastShareDocs.length + ' bestanden worden publiek beschikbaar.\nIedereen met de link kan de bestanden ' + (perm === 'DOWNLOAD' ? 'downloaden' : 'bekijken') + ' zonder login.\n\nAlleen aanmaak wordt gelogd, niet wie het opent.\nVervaldatum: ' + (expiry || 'geen');
-  } else if (shareMode === 'REGISTERED_USERS') {
-    confirmMsg = _lastShareDocs.length + ' bestanden delen met ingelogde gebruikers.\n\nOntvangers moeten inloggen met Trimble ID.\nToegang wordt gelogd.\nVervaldatum: ' + (expiry || 'geen');
-  } else {
-    confirmMsg = _lastShareDocs.length + ' bestanden delen met projectleden.\n\nAlleen bestaande leden kunnen de bestanden openen.';
-  }
-  confirmMsg += '\n\nDeze actie wordt gelogd in het TC activiteitenfeed.\n\nDoorgaan?';
-  if (!confirm(confirmMsg)) return;
-
-  // Bouw doclijst samenvatting
-  var docSummary = '\n\n--- Documentenlijst ---\n' + _lastShareDocs.map(function(d) {
-    return d.bestandsnaam + (d.document_status ? ' [' + d.document_status + ']' : '') + (d.revisie ? ' rev.' + d.revisie : '');
-  }).join('\n');
-  var fullMsg = (msg + docSummary).substring(0, 1024);
-
-  var body = {
-    mode: shareMode,
-    projectId: pid,
-    permission: perm,
-    message: fullMsg,
-    objects: _lastShareDocs.map(function(d) { return { id: d._vid, type: 'FILE' }; })
-  };
-  // PROJECT_USERS: notify met USER/GROUP, anders EMAIL
-  if (method === 'tc' && emails.length) {
-    body.notify = emails.map(function(e) { return { type: 'EMAIL', id: e }; });
-  }
-  if (expiry) body.expiryDate = expiry + 'T23:59:00+0000';
-
-  var btn = document.getElementById('shareSubmitBtn');
-  btn.textContent = '⏳ Verzenden...'; btn.disabled = true;
-
-  try {
-    var tcRegion = TC_BASE.indexOf('app21') >= 0 ? 'eu' : TC_BASE.indexOf('app31') >= 0 ? 'ap' : 'us';
-    var resp = await fetch(PROXY_BASE + '/tc/' + tcRegion + '/shares', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + tcToken, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (!resp.ok) { var errTxt = await resp.text(); throw new Error(resp.status + ': ' + errTxt); }
-    var result = await resp.json();
-    console.log('[Share] Volledige API response:', JSON.stringify(result, null, 2));
-
-    // Bouw per-bestand links
-    var shareObjects = result.objects || [];
-    _lastShareLinks = [];
-    for (var si = 0; si < _lastShareDocs.length; si++) {
-      var sObj = shareObjects[si];
-      var sUrl = '';
-      if (sObj && sObj.url) {
-        // Haal stoken uit /s/{stoken}
-        var stoken = sObj.url.replace(/^\/s\//, '');
-        if (shareMode === 'PUBLIC') {
-          // Publieke link via eigen download-proxy (geen login nodig)
-          sUrl = PROXY_BASE + '/download/' + tcRegion + '/' + stoken + (perm === 'VIEW' ? '?view=1' : '');
-        } else {
-          // TC link (vereist Trimble ID login)
-          sUrl = 'https://web.connect.trimble.com' + sObj.url;
-        }
-      }
-      _lastShareLinks.push({ name: _lastShareDocs[si].bestandsnaam, url: sUrl });
-    }
-    _lastShareUrl = _lastShareLinks.length === 1 ? _lastShareLinks[0].url : '';
-    console.log('[Share] Mode:', shareMode, '| Links per bestand:', _lastShareLinks);
-
-    // Markeer bestanden als gedeeld (localStorage)
-    var shareLog = JSON.parse(localStorage.getItem('doclist-shared-' + pid) || '{}');
-    var now = new Date().toISOString();
-    _lastShareDocs.forEach(function(d) {
-      shareLog[d._vid] = { date: now, emails: emails.join(', '), url: _lastShareUrl };
-      d._gedeeld = now.split('T')[0];
-    });
-    localStorage.setItem('doclist-shared-' + pid, JSON.stringify(shareLog));
-
-    // Bij eigen email: open direct mailprogramma
-    if (method === 'email') {
-      openShareInMail();
-    }
-
-    // Toon success
-    document.getElementById('shareForm').style.display = 'none';
-    document.getElementById('shareSuccess').style.display = '';
-    var successMsg = method === 'tc'
-      ? _lastShareDocs.length + ' bestanden gedeeld via TC met ' + emails.join(', ')
-      : _lastShareDocs.length + ' bestanden — link aangemaakt, email geopend';
-    document.getElementById('shareSuccessMsg').textContent = successMsg;
-    var linkHtml = _lastShareLinks.map(function(l) { return l.url ? '<a href="'+l.url+'" target="_blank" style="color:var(--af);text-decoration:none;display:block;padding:2px 0">'+l.name+'</a>' : l.name; }).join('');
-    document.getElementById('shareLink').innerHTML = linkHtml || 'Links beschikbaar in Trimble Connect';
-
-    console.log('[Share] Succesvol:', result);
-  } catch(e) {
-    console.error('[Share] Fout:', e);
-    alert('Delen mislukt: ' + e.message);
-  }
-  btn.textContent = '📨 Verzenden'; btn.disabled = false;
-}
-
-function copyShareLink() {
-  var text = '--- Documentenlijst ---\n' + _lastShareLinks.map(function(l) {
-    return l.name + (l.url ? '\n  ' + l.url : '');
-  }).join('\n');
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(function() { alert('Link + doclijst gekopieerd naar klembord!'); });
-  } else {
-    // Fallback
-    var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-    alert('Link + doclijst gekopieerd naar klembord!');
-  }
-}
-
-function openShareInMail() {
-  var emails = document.getElementById('shareEmails').value || '';
-  var userMsg = document.getElementById('shareMsg').value || '';
-  var projNaam = (tcProject && tcProject.name) ? tcProject.name : 'Project';
-  var subject = 'Documenten gedeeld: ' + projNaam;
-  var docList = _lastShareLinks.map(function(l) {
-    return '- ' + l.name + (l.url ? '\n  ' + l.url : '');
-  }).join('\n');
-  var body = (userMsg ? userMsg + '\n\n' : '') + 'Documenten uit ' + projNaam + ':\n\n' + docList + '\n\nVervaldatum: ' + (document.getElementById('shareExpiry').value || 'niet ingesteld');
-  var mailto = 'mailto:' + encodeURIComponent(emails) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-  window.open(mailto, '_blank');
-}
-
-// === START ===
-initTCExtension();
+function escapeHtml(text) { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
 </script>
 </body>
 </html>
