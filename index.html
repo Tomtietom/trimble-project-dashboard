@@ -707,11 +707,27 @@ async function initExtensionMode() {
   try {
     const apiLib = await waitForWorkspaceAPI(10000);
     tcAPI = await apiLib.connect(window.parent, (event, data) => {
+      console.log('[Dashboard] TC Event:', event, data);
       if (data && (data.type === 'token' || event === 'extension.accessToken')) {
         const t = (typeof data === 'string') ? data : (data.token || data.accessToken || null);
         if (t && t.length > 20) token = t;
       }
     }, 15000);
+    console.log('[Dashboard] Verbonden met Workspace API');
+
+    // Registreer sidebar menu-item
+    const menuDef = {
+      title: 'Project Dashboard',
+      icon: 'https://tomtietom.github.io/trimble-project-dashboard/icon.png',
+      command: 'open_project_dashboard'
+    };
+    if (tcAPI.ui && typeof tcAPI.ui.setMenu === 'function') {
+      tcAPI.ui.setMenu(menuDef);
+      console.log('[Dashboard] Menu geregistreerd via ui.setMenu');
+    } else if (tcAPI.extension && typeof tcAPI.extension.setMenu === 'function') {
+      tcAPI.extension.setMenu(menuDef);
+      console.log('[Dashboard] Menu geregistreerd via extension.setMenu');
+    }
 
     // Token ophalen
     if (!token) {
