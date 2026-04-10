@@ -1132,8 +1132,9 @@ function backToLogin() {
 function showDashboard() {
   document.getElementById('loadingScreen').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('dashboard').style.display = '';
+  document.getElementById('dashboard').style.display = 'block';
   document.getElementById('headerRight').style.display = 'flex';
+  console.log('[Dashboard] Dashboard zichtbaar, projecten:', projects.length);
 
   renderTable();
   updateStats();
