@@ -927,6 +927,43 @@ async function apiFetchPaginated(region, endpoint, pageSize = 100) {
 }
 
 // ============================================================
+//  PROJECTEN OPHALEN (met query params paginering)
+// ============================================================
+async function fetchAllProjects(region) {
+  const allProjects = [];
+  const seenIds = new Set();
+  let offset = 0;
+  const limit = 100;
+
+  while (true) {
+    const url = getApiUrl(region, `projects?offset=${offset}&limit=${limit}`);
+    console.log('[Dashboard] Fetch projecten:', url);
+    const resp = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+      }
+    });
+    console.log('[Dashboard] Response status:', resp.status);
+    if (!resp.ok) throw new Error(`API ${resp.status}: projects`);
+    const items = await resp.json();
+    console.log('[Dashboard] Projecten ontvangen:', Array.isArray(items) ? items.length : typeof items);
+    if (!Array.isArray(items) || items.length === 0) break;
+
+    for (const item of items) {
+      if (!seenIds.has(item.id)) {
+        seenIds.add(item.id);
+        allProjects.push(item);
+      }
+    }
+
+    if (items.length < limit) break; // geen volgende pagina
+    offset += items.length;
+  }
+  return allProjects;
+}
+
+// ============================================================
 //  PROJECTEN LADEN
 // ============================================================
 async function loadAllProjects(selectedRegion) {
@@ -947,7 +984,8 @@ async function loadAllProjects(selectedRegion) {
 
     for (const region of regionsToFetch) {
       try {
-        const regionProjects = await apiFetchPaginated(region, 'projects');
+        console.log('[Dashboard] Start ophalen regio:', region);
+        const regionProjects = await fetchAllProjects(region);
         for (const p of regionProjects) {
           if (!seenIds.has(p.id)) {
             seenIds.add(p.id);
