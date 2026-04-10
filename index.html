@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trimble Connect - Project Dashboard | At Fielt</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAJZJREFUWEft1DEKwCAQRdHx/peOhYVFCi1cwEIS0E5m+PPrVTq5e/9e3T3T+34fp/tnJoCZBECSJEmSJEmSJGlJANd9v3rv+xGA+wSQJEmSJEmS/ncAz8eSJEmSJEmStCSA53NJkiRJkiRJSwJ4PpckSZIkSZK0JIDnc0mSJEmSJElLAng+lyRJkiRJkrQkgOdzSZIkSZL+ewBfYCl0Id3cvQAAAABJRU5ErkJggg==">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f9f9f9;
+  color: #222;
+  min-height: 100vh;
+}
+
+:root {
+  --af-oranje: #d4821a;
+  --af-oranje-hover: #ec5d0e;
+  --af-oranje-licht: #fef5eb;
+  --af-donker: #222;
+  --af-grijs: #f5f0ea;
+}
+
+/* === HEADER === */
+.header {
+  background: var(--af-donker);
+  color: white;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header h1 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+}
+.header .brand {
+  font-size: 12px;
+  opacity: 0.5;
+  margin-left: 8px;
+  font-weight: 400;
+}
+.header .header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.header .search-box {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: white;
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+  width: 220px;
+  outline: none;
+  transition: all 0.2s;
+}
+.header .search-box::placeholder { color: rgba(255,255,255,0.4); }
+.header .search-box:focus {
+  background: rgba(255,255,255,0.15);
+  border-color: var(--af-oranje);
+  width: 280px;
+}
+.header .project-count {
+  background: var(--af-oranje);
+  color: white;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.header .btn-logout {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.7);
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+}
+.header .btn-logout:hover { border-color: white; color: white; }
+
+/* === LOGIN SCHERM === */
+.login-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 50px);
+  padding: 40px;
+  background: linear-gradient(180deg, white 0%, var(--af-grijs) 100%);
+}
+.login-card {
+  background: white;
+  border-radius: 14px;
+  padding: 48px;
+  max-width: 620px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+}
+.login-card h2 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--af-donker);
+}
+.login-card p {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+/* Stappen */
+.steps-guide {
+  text-align: left;
+  margin-bottom: 24px;
+}
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.step-item:last-child { border-bottom: none; }
+.step-num {
+  background: var(--af-oranje);
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+  font-family: 'Montserrat', sans-serif;
+}
+.step-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #444;
+}
+.step-text a {
+  color: var(--af-oranje);
+  font-weight: 600;
+  text-decoration: none;
+}
+.step-text a:hover { text-decoration: underline; }
+.step-text code {
+  background: #f5f0ea;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--af-donker);
+}
+.step-text .shortcut {
+  display: inline-block;
+  background: #eee;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #555;
+  border: 1px solid #ddd;
+}
+
+.login-card .token-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px dashed #d0d0d0;
+  border-radius: 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  resize: none;
+  height: 56px;
+  transition: all 0.2s;
+  background: #fafafa;
+  text-align: center;
+}
+.login-card .token-input:focus {
+  outline: none;
+  border-color: var(--af-oranje);
+  border-style: solid;
+  background: white;
+  text-align: left;
+}
+.login-card .token-input.has-token {
+  border-color: #4caf50;
+  border-style: solid;
+  background: #f1f8e9;
+  color: #2e7d32;
+}
+.login-card .region-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+.login-card .region-select {
+  flex: 1;
+  padding: 10px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+}
+.login-card .region-select:focus {
+  outline: none;
+  border-color: var(--af-oranje);
+}
+.login-card .btn-load {
+  flex: 1;
+  background: var(--af-oranje);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.login-card .btn-load:hover { background: var(--af-oranje-hover); }
+.login-card .btn-load:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+.token-status {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #999;
+  min-height: 18px;
+}
+.token-status.valid { color: #2e7d32; font-weight: 500; }
+.token-status.invalid { color: #c62828; }
+
+/* === LOADING SCHERM === */
+.loading-screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 50px);
+  padding: 40px;
+  background: linear-gradient(180deg, white 0%, var(--af-grijs) 100%);
+}
+.loading-card {
+  background: white;
+  border-radius: 14px;
+  padding: 48px;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+}
+.loading-card h3 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 18px;
+  margin-bottom: 24px;
+}
+.loading-steps {
+  text-align: left;
+  margin: 20px 0;
+}
+.loading-steps .step {
+  padding: 8px 0;
+  font-size: 14px;
+  opacity: 0.4;
+  transition: opacity 0.3s;
+}
+.loading-steps .step.active { opacity: 1; }
+.loading-steps .step.done { opacity: 0.8; }
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #eee;
+  border-radius: 3px;
+  margin: 16px 0 8px;
+  display: none;
+  overflow: hidden;
+}
+.progress-bar .fill {
+  height: 100%;
+  background: var(--af-oranje);
+  border-radius: 3px;
+  transition: width 0.3s;
+  width: 0%;
+}
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #999;
+}
+.loading-error {
+  display: none;
+  margin-top: 16px;
+  padding: 12px;
+  background: #fff3f3;
+  border: 1px solid #ffcdd2;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #c62828;
+  text-align: left;
+}
+.btn-fallback {
+  display: none;
+  margin-top: 12px;
+  background: transparent;
+  border: 1px solid var(--af-oranje);
+  color: var(--af-oranje);
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+}
+.btn-fallback:hover { background: var(--af-oranje-licht); }
+
+/* === DASHBOARD === */
+.dashboard {
+  display: none;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Stats */
+.stats-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px 24px;
+  flex: 1;
+  min-width: 160px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  border: 1px solid #eee;
+}
+.stat-card .stat-value {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--af-donker);
+}
+.stat-card .stat-label {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+}
+.stat-card.highlight .stat-value { color: var(--af-oranje); }
+
+/* Filters */
+.filters-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  user-select: none;
+}
+.filter-toggle input[type="checkbox"] {
+  accent-color: var(--af-oranje);
+  width: 16px;
+  height: 16px;
+}
+.sort-info {
+  margin-left: auto;
+  font-size: 12px;
+  color: #999;
+}
+
+/* Tabel */
+.project-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  border: 1px solid #eee;
+}
+.project-table thead th {
+  background: #fafafa;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  border-bottom: 2px solid #eee;
+  transition: color 0.2s;
+}
+.project-table thead th:hover { color: var(--af-oranje); }
+.project-table thead th .sort-arrow {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 10px;
+  opacity: 0.3;
+}
+.project-table thead th.sorted .sort-arrow { opacity: 1; color: var(--af-oranje); }
+
+.project-table tbody tr {
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.15s;
+}
+.project-table tbody tr:hover { background: var(--af-oranje-licht); }
+.project-table tbody tr:last-child { border-bottom: none; }
+.project-table tbody td {
+  padding: 12px 16px;
+  font-size: 14px;
+}
+
+/* Project naam link */
+.project-link {
+  color: var(--af-donker);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.project-link:hover { color: var(--af-oranje); }
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.badge-admin { background: var(--af-oranje); color: white; }
+.badge-user { background: #eee; color: #888; }
+.badge-loading { background: #f5f5f5; color: #bbb; font-style: italic; text-transform: none; }
+.badge-region {
+  background: #e8f0fe;
+  color: #1967d2;
+  font-size: 10px;
+  padding: 2px 8px;
+}
+
+/* Relatieve datum */
+.date-cell {
+  color: #888;
+  font-size: 13px;
+}
+.date-cell.recent { color: var(--af-oranje); font-weight: 500; }
+
+/* Leden */
+.members-cell { font-variant-numeric: tabular-nums; }
+
+/* Lege state */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+.empty-state h3 {
+  font-family: 'Montserrat', sans-serif;
+  margin-bottom: 8px;
+  color: #666;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard { padding: 12px; }
+  .stats-row { gap: 8px; }
+  .stat-card { padding: 14px; min-width: 120px; }
+  .stat-card .stat-value { font-size: 22px; }
+  .header .search-box { width: 140px; }
+  .header .search-box:focus { width: 180px; }
+  .project-table { font-size: 13px; }
+  .project-table thead th, .project-table tbody td { padding: 10px 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER (altijd zichtbaar) -->
+<div class="header">
+  <h1>Project Dashboard <span class="brand">At Fielt</span></h1>
+  <div class="header-right" id="headerRight" style="display:none;">
+    <input type="text" class="search-box" id="searchBox" placeholder="Zoek project..." oninput="filterProjects()">
+    <span class="project-count" id="projectCount">0</span>
+    <button class="btn-logout" onclick="logout()">Uitloggen</button>
+  </div>
+</div>
+
+<!-- LOGIN SCHERM -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h2>Trimble Connect Dashboard</h2>
+    <p>Bekijk al je projecten in een overzicht. In 3 stappen klaar:</p>
+
+    <div class="steps-guide">
+      <div class="step-item">
+        <span class="step-num">1</span>
+        <div class="step-text">
+          Open <a href="https://web.connect.trimble.com/projects" target="_blank">Trimble Connect</a> en log in (als je dat nog niet bent)
+        </div>
+      </div>
+      <div class="step-item">
+        <span class="step-num">2</span>
+        <div class="step-text">
+          Druk <span class="shortcut">F12</span> &rarr; klik op <strong>Network</strong> tab &rarr; herlaad de pagina (<span class="shortcut">F5</span>)
+        </div>
+      </div>
+      <div class="step-item">
+        <span class="step-num">3</span>
+        <div class="step-text">
+          Klik op een request (bijv. <code>projects</code>) &rarr; kopieer de tekst achter <code>Authorization: Bearer</code> en plak hieronder
+        </div>
+      </div>
+    </div>
+
+    <textarea class="token-input" id="tokenInput" placeholder="Plak je token hier (Ctrl+V)..." oninput="onTokenInput()"></textarea>
+    <div class="token-status" id="tokenStatus"></div>
+
+    <div class="region-row">
+      <select class="region-select" id="regionSelect">
+        <option value="all">Alle regio's</option>
+        <option value="europe" selected>Europa</option>
+        <option value="north america">Noord-Amerika</option>
+        <option value="asia">Azie</option>
+      </select>
+      <button class="btn-load" id="btnLoad" onclick="startLoading()" disabled>Laden</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING SCHERM -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-card">
+    <h3>Projecten laden...</h3>
+    <div class="loading-steps">
+      <div class="step active" id="step1">&#9203; Verbinding maken...</div>
+      <div class="step" id="step2">&#9744; Projecten ophalen...</div>
+      <div class="step" id="step3">&#9744; Rollen controleren...</div>
+    </div>
+    <div class="progress-bar" id="progressBar">
+      <div class="fill" id="progressFill"></div>
+    </div>
+    <div class="progress-info">
+      <span id="progressPct"></span>
+      <span id="progressEta"></span>
+    </div>
+    <div class="loading-error" id="loadingError"></div>
+    <button class="btn-fallback" id="btnFallback" onclick="backToLogin()">Terug naar inloggen</button>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard" id="dashboard">
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value" id="statTotal">0</div>
+      <div class="stat-label">Projecten</div>
+    </div>
+    <div class="stat-card highlight">
+      <div class="stat-value" id="statAdmin">0</div>
+      <div class="stat-label">Admin</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statMembers">0</div>
+      <div class="stat-label">Totaal leden</div>
+    </div>
+  </div>
+
+  <div class="filters-row">
+    <label class="filter-toggle">
+      <input type="checkbox" id="filterAdmin" onchange="filterProjects()">
+      Alleen admin-projecten
+    </label>
+    <span class="sort-info" id="sortInfo">Sorteer: klik op een kolom</span>
+  </div>
+
+  <table class="project-table" id="projectTable">
+    <thead>
+      <tr>
+        <th onclick="sortBy('name')">Projectnaam <span class="sort-arrow" id="sortName">&#9650;</span></th>
+        <th onclick="sortBy('role')">Rol <span class="sort-arrow" id="sortRole">&#9650;</span></th>
+        <th onclick="sortBy('members')">Leden <span class="sort-arrow" id="sortMembers">&#9650;</span></th>
+        <th onclick="sortBy('activity')">Laatste activiteit <span class="sort-arrow" id="sortActivity">&#9650;</span></th>
+        <th onclick="sortBy('region')">Regio <span class="sort-arrow" id="sortRegion">&#9650;</span></th>
+      </tr>
+    </thead>
+    <tbody id="projectBody"></tbody>
+  </table>
+
+  <div class="empty-state" id="emptyState" style="display:none;">
+    <h3>Geen projecten gevonden</h3>
+    <p>Pas je zoekopdracht of filter aan.</p>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  GLOBALE STATE
+// ============================================================
+let token = null;
+let currentUser = null;    // { email, sub } uit JWT
+let projects = [];         // alle projecten met role info
+let sortColumn = 'name';
+let sortAsc = true;
+let isEmbedded = false;
+let tcAPI = null;
+
+const PROXY_BASE = 'https://tc-proxy.tom-da0.workers.dev';
+
+const TC_REGIONS = {
+  'europe':        'https://app21.connect.trimble.com/tc/api/2.0',
+  'north america': 'https://app.connect.trimble.com/tc/api/2.0',
+  'asia':          'https://app31.connect.trimble.com/tc/api/2.0',
+};
+
+const REGION_KEYS = {
+  'europe': 'eu',
+  'north america': 'us',
+  'asia': 'ap',
+};
+
+const REGION_LABELS = {
+  'europe': 'EU',
+  'north america': 'NA',
+  'asia': 'AP',
+};
+
+// ============================================================
+//  INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', async () => {
+  // Check of we in een TC iframe zitten
+  let inIframe = false;
+  try { inIframe = (window.self !== window.top); } catch(e) { inIframe = true; }
+
+  if (inIframe) {
+    isEmbedded = true;
+    await initExtensionMode();
+  } else {
+    // Standalone: check sessionStorage voor eerder token
+    const saved = sessionStorage.getItem('tc_token');
+    const savedRegion = sessionStorage.getItem('tc_region');
+    if (saved) {
+      document.getElementById('tokenInput').value = saved;
+      if (savedRegion) document.getElementById('regionSelect').value = savedRegion;
+      onTokenInput(); // valideer en activeer knop
+    }
+  }
+});
+
+// ============================================================
+//  TC EXTENSIE MODUS
+// ============================================================
+function waitForWorkspaceAPI(maxWait = 10000) {
+  return new Promise((resolve, reject) => {
+    const api = window.WorkspaceAPI || window.Extensions || window.TrimbleConnectWorkspace;
+    if (api) return resolve(api);
+    const start = Date.now();
+    const interval = setInterval(() => {
+      const api = window.WorkspaceAPI || window.Extensions || window.TrimbleConnectWorkspace;
+      if (api) { clearInterval(interval); resolve(api); }
+      else if (Date.now() - start > maxWait) { clearInterval(interval); reject(new Error('Workspace API timeout')); }
+    }, 200);
+  });
+}
+
+async function initExtensionMode() {
+  try {
+    const apiLib = await waitForWorkspaceAPI(10000);
+    tcAPI = await apiLib.connect(window.parent, (event, data) => {
+      if (data && (data.type === 'token' || event === 'extension.accessToken')) {
+        const t = (typeof data === 'string') ? data : (data.token || data.accessToken || null);
+        if (t && t.length > 20) token = t;
+      }
+    }, 15000);
+
+    // Token ophalen
+    if (!token) {
+      try {
+        const result = await Promise.race([
+          tcAPI.extension.requestPermission('accesstoken'),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
+        ]);
+        if (typeof result === 'string' && result.length > 20) token = result;
+        else if (result?.token) token = result.token;
+        else if (result?.accessToken) token = result.accessToken;
+      } catch(e) { /* probeer volgende methode */ }
+    }
+
+    if (!token && tcAPI.extension?.getAccessToken) {
+      try {
+        const t = await tcAPI.extension.getAccessToken();
+        if (t && t.length > 20) token = t;
+      } catch(e) { /* negeer */ }
+    }
+
+    if (token) {
+      currentUser = parseJWT(token);
+      // In extensie modus: laad alle regio's
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('loadingScreen').style.display = 'flex';
+      await loadAllProjects('all');
+    } else {
+      // Geen token: toon login scherm
+      console.warn('[TC] Geen token in extensie modus, toon login scherm');
+    }
+  } catch(e) {
+    console.warn('[TC] Extensie init mislukt:', e.message);
+    // Fallback naar standalone login
+  }
+}
+
+// ============================================================
+//  JWT DECODEREN
+// ============================================================
+function parseJWT(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return {
+      email: payload.email || payload.unique_name || payload.preferred_username || null,
+      sub: payload.sub || payload.oid || null,
+      name: payload.name || payload.given_name || null,
+    };
+  } catch(e) {
+    console.warn('JWT parse fout:', e);
+    return null;
+  }
+}
+
+// ============================================================
+//  TOKEN INVOER VALIDATIE
+// ============================================================
+function onTokenInput() {
+  const input = document.getElementById('tokenInput').value.trim();
+  const statusEl = document.getElementById('tokenStatus');
+  const btnLoad = document.getElementById('btnLoad');
+  const textarea = document.getElementById('tokenInput');
+
+  if (!input) {
+    statusEl.textContent = '';
+    statusEl.className = 'token-status';
+    btnLoad.disabled = true;
+    textarea.classList.remove('has-token');
+    return;
+  }
+
+  // Verwijder "Bearer " prefix
+  const cleaned = input.replace(/^Bearer\s+/i, '');
+
+  // Check of het een geldige JWT is (3 delen, gescheiden door punten)
+  const parts = cleaned.split('.');
+  if (parts.length === 3 && cleaned.length > 100) {
+    textarea.classList.add('has-token');
+    btnLoad.disabled = false;
+
+    // Probeer user info uit JWT te halen
+    try {
+      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+      const email = payload.email || payload.unique_name || payload.preferred_username || '';
+      if (email) {
+        statusEl.textContent = 'Token herkend voor: ' + email;
+      } else {
+        statusEl.textContent = 'Geldig token gedetecteerd';
+      }
+      statusEl.className = 'token-status valid';
+    } catch(e) {
+      statusEl.textContent = 'Token gedetecteerd';
+      statusEl.className = 'token-status valid';
+    }
+  } else {
+    textarea.classList.remove('has-token');
+    btnLoad.disabled = true;
+    statusEl.textContent = 'Ongeldig token — kopieer het volledige token inclusief alle tekens';
+    statusEl.className = 'token-status invalid';
+  }
+}
+
+// ============================================================
+//  STANDALONE: START LADEN
+// ============================================================
+function startLoading() {
+  const input = document.getElementById('tokenInput').value.trim();
+  if (!input) return;
+
+  // Verwijder "Bearer " prefix als die meegeplakt is
+  token = input.replace(/^Bearer\s+/i, '');
+  const region = document.getElementById('regionSelect').value;
+
+  // Sla op voor hergebruik
+  sessionStorage.setItem('tc_token', token);
+  sessionStorage.setItem('tc_region', region);
+
+  currentUser = parseJWT(token);
+
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('loadingScreen').style.display = 'flex';
+
+  loadAllProjects(region);
+}
+
+// ============================================================
+//  API HELPERS
+// ============================================================
+function getApiUrl(region, endpoint) {
+  // Standalone: gebruik CORS proxy
+  if (!isEmbedded) {
+    const key = REGION_KEYS[region] || 'eu';
+    return `${PROXY_BASE}/tc/${key}/${endpoint.replace(/^\//, '')}`;
+  }
+  // Extensie: directe API call
+  return `${TC_REGIONS[region]}/${endpoint.replace(/^\//, '')}`;
+}
+
+async function apiFetch(region, endpoint) {
+  const url = getApiUrl(region, endpoint);
+  const resp = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/json',
+    }
+  });
+  if (!resp.ok) {
+    throw new Error(`API ${resp.status}: ${endpoint}`);
+  }
+  return resp.json();
+}
+
+async function apiFetchPaginated(region, endpoint, pageSize = 100) {
+  const allItems = [];
+  const seenIds = new Set();
+  let start = 0;
+
+  while (true) {
+    const url = getApiUrl(region, endpoint);
+    const resp = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+        'Range': `items=${start}-${start + pageSize - 1}`,
+      }
+    });
+    if (!resp.ok) throw new Error(`API ${resp.status}: ${endpoint}`);
+    const items = await resp.json();
+    if (!Array.isArray(items) || items.length === 0) break;
+
+    for (const item of items) {
+      if (!seenIds.has(item.id)) {
+        seenIds.add(item.id);
+        allItems.push(item);
+      }
+    }
+
+    const cr = resp.headers.get('Content-Range');
+    if (cr) {
+      const m = cr.match(/items \d+-\d+\/(\d+)/);
+      if (m) {
+        start += items.length;
+        if (start >= parseInt(m[1])) break;
+      } else break;
+    } else break;
+  }
+  return allItems;
+}
+
+// ============================================================
+//  PROJECTEN LADEN
+// ============================================================
+async function loadAllProjects(selectedRegion) {
+  projects = [];
+  const regionsToFetch = selectedRegion === 'all'
+    ? Object.keys(TC_REGIONS)
+    : [selectedRegion];
+
+  try {
+    // Stap 1: Token valideren
+    updateStep(1, 'active', 'Verbinding maken...');
+    if (!token) throw new Error('Geen token beschikbaar');
+    updateStep(1, 'done', 'Verbonden' + (currentUser?.email ? ` als ${currentUser.email}` : ''));
+
+    // Stap 2: Projecten ophalen per regio
+    updateStep(2, 'active', 'Projecten ophalen...');
+    const seenIds = new Set();
+
+    for (const region of regionsToFetch) {
+      try {
+        const regionProjects = await apiFetchPaginated(region, 'projects');
+        for (const p of regionProjects) {
+          if (!seenIds.has(p.id)) {
+            seenIds.add(p.id);
+            projects.push({
+              id: p.id,
+              name: p.name || 'Naamloos',
+              members: p.usersCount || 0,
+              updatedOn: p.updatedOn || p.modifiedOn || null,
+              location: p.location || region,
+              region: region,
+              role: null, // wordt later ingevuld
+              _regionKey: REGION_KEYS[region] || 'eu',
+            });
+          }
+        }
+      } catch(e) {
+        console.warn(`Regio ${region} mislukt:`, e.message);
+        // Ga door met andere regio's
+      }
+    }
+
+    if (projects.length === 0) {
+      throw new Error('Geen projecten gevonden. Controleer je token en regio.');
+    }
+
+    updateStep(2, 'done', `${projects.length} projecten gevonden`);
+
+    // Stap 3: Rollen bepalen (progressief)
+    updateStep(3, 'active', 'Rollen controleren...');
+    showDashboard(); // Toon dashboard alvast, rollen laden in achtergrond
+
+    await loadRolesProgressively();
+    updateStep(3, 'done', 'Rollen geladen');
+
+  } catch(err) {
+    console.error('Laden mislukt:', err);
+    const errorEl = document.getElementById('loadingError');
+    errorEl.style.display = '';
+    errorEl.innerHTML = `<strong>Fout:</strong> ${err.message}`;
+    document.getElementById('btnFallback').style.display = '';
+  }
+}
+
+// ============================================================
+//  ROLLEN PROGRESSIEF LADEN
+// ============================================================
+async function loadRolesProgressively() {
+  const PARALLEL = 5;
+  let done = 0;
+  const total = projects.length;
+  const progressBar = document.getElementById('progressBar');
+  const progressFill = document.getElementById('progressFill');
+  const progressPct = document.getElementById('progressPct');
+
+  progressBar.style.display = '';
+
+  const queue = [...projects];
+  const executing = new Set();
+
+  for (const project of queue) {
+    const task = (async () => {
+      try {
+        const users = await apiFetchPaginated(project.region, `projects/${project.id}/users`);
+        // Zoek huidige gebruiker
+        const me = findCurrentUser(users);
+        project.role = me?.role || 'USER';
+        // Update ook members count met werkelijk aantal actieve gebruikers
+        project.members = users.filter(u => u.status === 'ACTIVE').length || project.members;
+      } catch(e) {
+        project.role = '?';
+      }
+      done++;
+      const pct = Math.round((done / total) * 100);
+      progressFill.style.width = pct + '%';
+      progressPct.textContent = `${done}/${total}`;
+      // Update tabel rij
+      updateProjectRow(project);
+      updateStats();
+    })();
+
+    executing.add(task);
+    task.finally(() => executing.delete(task));
+    if (executing.size >= PARALLEL) await Promise.race(executing);
+  }
+  await Promise.all(executing);
+  progressBar.style.display = 'none';
+}
+
+function findCurrentUser(users) {
+  if (!currentUser) return null;
+  // Probeer te matchen op email
+  if (currentUser.email) {
+    const match = users.find(u => u.email?.toLowerCase() === currentUser.email.toLowerCase());
+    if (match) return match;
+  }
+  // Probeer te matchen op tiduuid/sub
+  if (currentUser.sub) {
+    const match = users.find(u => u.tiduuid === currentUser.sub || u.id === currentUser.sub);
+    if (match) return match;
+  }
+  return null;
+}
+
+// ============================================================
+//  LOADING UI HELPERS
+// ============================================================
+function updateStep(num, status, text) {
+  const el = document.getElementById('step' + num);
+  if (!el) return;
+
+  if (status === 'active') {
+    el.innerHTML = `&#9203; ${text}`;
+    el.className = 'step active';
+  } else if (status === 'done') {
+    el.innerHTML = `&#9989; ${text}`;
+    el.className = 'step done';
+  } else if (status === 'error') {
+    el.innerHTML = `&#10060; ${text}`;
+    el.className = 'step active';
+  }
+}
+
+function backToLogin() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('loadingError').style.display = 'none';
+  document.getElementById('btnFallback').style.display = 'none';
+  document.getElementById('loginScreen').style.display = '';
+  // Reset steps
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById('step' + i);
+    if (el) { el.className = 'step'; el.innerHTML = ''; }
+  }
+}
+
+// ============================================================
+//  DASHBOARD TONEN
+// ============================================================
+function showDashboard() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = '';
+  document.getElementById('headerRight').style.display = 'flex';
+
+  renderTable();
+  updateStats();
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = projects.length;
+  const adminCount = projects.filter(p => p.role === 'ADMIN').length;
+  document.getElementById('statAdmin').textContent = adminCount;
+  const totalMembers = projects.reduce((sum, p) => sum + (p.members || 0), 0);
+  document.getElementById('statMembers').textContent = totalMembers;
+  document.getElementById('projectCount').textContent = projects.length;
+}
+
+// ============================================================
+//  TABEL RENDEREN
+// ============================================================
+function getFilteredProjects() {
+  let list = [...projects];
+
+  // Zoekfilter
+  const query = document.getElementById('searchBox')?.value?.toLowerCase() || '';
+  if (query) {
+    list = list.filter(p => p.name.toLowerCase().includes(query));
+  }
+
+  // Admin filter
+  if (document.getElementById('filterAdmin')?.checked) {
+    list = list.filter(p => p.role === 'ADMIN');
+  }
+
+  // Sorteren
+  list.sort((a, b) => {
+    let va, vb;
+    switch (sortColumn) {
+      case 'name':
+        va = a.name.toLowerCase();
+        vb = b.name.toLowerCase();
+        break;
+      case 'role':
+        va = a.role === 'ADMIN' ? 0 : 1;
+        vb = b.role === 'ADMIN' ? 0 : 1;
+        break;
+      case 'members':
+        va = a.members || 0;
+        vb = b.members || 0;
+        break;
+      case 'activity':
+        va = a.updatedOn ? new Date(a.updatedOn).getTime() : 0;
+        vb = b.updatedOn ? new Date(b.updatedOn).getTime() : 0;
+        break;
+      case 'region':
+        va = a.location || '';
+        vb = b.location || '';
+        break;
+      default:
+        va = a.name;
+        vb = b.name;
+    }
+    if (va < vb) return sortAsc ? -1 : 1;
+    if (va > vb) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  return list;
+}
+
+function renderTable() {
+  const list = getFilteredProjects();
+  const tbody = document.getElementById('projectBody');
+  const empty = document.getElementById('emptyState');
+
+  if (list.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = list.map(p => {
+    const roleBadge = p.role === 'ADMIN'
+      ? '<span class="badge badge-admin">Admin</span>'
+      : p.role === null
+        ? '<span class="badge badge-loading">laden...</span>'
+        : p.role === '?'
+          ? '<span class="badge badge-user">?</span>'
+          : '<span class="badge badge-user">User</span>';
+
+    const regionLabel = REGION_LABELS[p.region] || p.location || '?';
+
+    const dateStr = formatRelativeDate(p.updatedOn);
+    const isRecent = p.updatedOn && (Date.now() - new Date(p.updatedOn).getTime()) < 7 * 24 * 60 * 60 * 1000;
+
+    const projectUrl = `https://web.connect.trimble.com/projects/${p.id}`;
+
+    return `<tr data-id="${p.id}">
+      <td><a href="${projectUrl}" target="_blank" class="project-link" title="Open in Trimble Connect">${escapeHtml(p.name)}</a></td>
+      <td>${roleBadge}</td>
+      <td class="members-cell">${p.members}</td>
+      <td class="date-cell ${isRecent ? 'recent' : ''}" title="${p.updatedOn || ''}">${dateStr}</td>
+      <td><span class="badge badge-region">${regionLabel}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Update sort headers
+  document.querySelectorAll('.project-table thead th').forEach(th => th.classList.remove('sorted'));
+  const colMap = { name: 'sortName', role: 'sortRole', members: 'sortMembers', activity: 'sortActivity', region: 'sortRegion' };
+  const activeArrow = document.getElementById(colMap[sortColumn]);
+  if (activeArrow) {
+    activeArrow.parentElement.classList.add('sorted');
+    activeArrow.innerHTML = sortAsc ? '&#9650;' : '&#9660;';
+  }
+}
+
+function updateProjectRow(project) {
+  const row = document.querySelector(`tr[data-id="${project.id}"]`);
+  if (!row) return;
+  const cells = row.querySelectorAll('td');
+  if (cells.length < 3) return;
+
+  // Update rol badge
+  if (project.role === 'ADMIN') {
+    cells[1].innerHTML = '<span class="badge badge-admin">Admin</span>';
+  } else if (project.role === '?') {
+    cells[1].innerHTML = '<span class="badge badge-user">?</span>';
+  } else {
+    cells[1].innerHTML = '<span class="badge badge-user">User</span>';
+  }
+
+  // Update leden
+  cells[2].textContent = project.members;
+}
+
+// ============================================================
+//  SORTEREN & FILTEREN
+// ============================================================
+function sortBy(column) {
+  if (sortColumn === column) {
+    sortAsc = !sortAsc;
+  } else {
+    sortColumn = column;
+    sortAsc = true;
+  }
+  const labels = { name: 'Naam', role: 'Rol', members: 'Leden', activity: 'Activiteit', region: 'Regio' };
+  document.getElementById('sortInfo').textContent = `Sorteer: ${labels[column]} ${sortAsc ? '(A-Z)' : '(Z-A)'}`;
+  renderTable();
+}
+
+function filterProjects() {
+  renderTable();
+  // Update zichtbare count
+  const visible = getFilteredProjects().length;
+  document.getElementById('projectCount').textContent = visible;
+}
+
+// ============================================================
+//  UITLOGGEN
+// ============================================================
+function logout() {
+  token = null;
+  currentUser = null;
+  projects = [];
+  sessionStorage.removeItem('tc_token');
+  sessionStorage.removeItem('tc_region');
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('headerRight').style.display = 'none';
+  document.getElementById('loginScreen').style.display = '';
+  document.getElementById('tokenInput').value = '';
+}
+
+// ============================================================
+//  HULPFUNCTIES
+// ============================================================
+function formatRelativeDate(dateStr) {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHrs = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMin < 1) return 'Zojuist';
+  if (diffMin < 60) return `${diffMin} min geleden`;
+  if (diffHrs < 24) return `${diffHrs} uur geleden`;
+  if (diffDays < 7) return `${diffDays} dag${diffDays > 1 ? 'en' : ''} geleden`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} ${Math.floor(diffDays / 7) === 1 ? 'week' : 'weken'} geleden`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)} maand${Math.floor(diffDays / 30) > 1 ? 'en' : ''} geleden`;
+  return `${Math.floor(diffDays / 365)} jaar geleden`;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>
