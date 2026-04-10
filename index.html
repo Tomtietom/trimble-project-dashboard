@@ -765,13 +765,19 @@ async function initExtensionMode() {
 
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('loadingScreen').style.display = 'flex';
-      await loadAllProjects(region);
+      console.log('[Dashboard] Start loadAllProjects...');
+      try {
+        await loadAllProjects(region);
+        console.log('[Dashboard] loadAllProjects klaar!');
+      } catch(loadErr) {
+        console.error('[Dashboard] loadAllProjects FOUT:', loadErr.message, loadErr.stack);
+      }
     } else {
       // Geen token: toon login scherm
-      console.warn('[TC] Geen token in extensie modus, toon login scherm');
+      console.warn('[Dashboard] Geen token in extensie modus, toon login scherm');
     }
   } catch(e) {
-    console.warn('[TC] Extensie init mislukt:', e.message);
+    console.error('[Dashboard] Extensie init mislukt:', e.message, e.stack);
     // Fallback naar standalone login
   }
 }
