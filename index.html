@@ -496,7 +496,7 @@ async function loadAllProjects(selectedRegion, isRefresh) {
         for (const p of regionProjects) {
           if (!seenIds.has(p.id)) {
             seenIds.add(p.id);
-            projects.push({ id: p.id, name: p.name || 'Naamloos', members: p.usersCount || 0, updatedOn: p.updatedOn || p.modifiedOn || null, location: p.location || region, region: region, role: null, description: p.description || '', _regionKey: REGION_KEYS[region] || 'eu' });
+            projects.push({ id: p.id, name: p.name || 'Naamloos', members: p.usersCount || 0, updatedOn: p.updatedOn || p.modifiedOn || null, location: p.location || region, region: region, role: null, rootId: p.rootId || null, description: p.description || '', _regionKey: REGION_KEYS[region] || 'eu' });
           }
         }
       } catch(e) { console.warn('Regio ' + region + ' mislukt:', e.message); }
@@ -533,10 +533,15 @@ async function loadRolesProgressively() {
   for (const project of projects) {
     const task = (async () => {
       try {
-        const users = await apiFetchPaginated(project.region, 'projects/' + project.id + '/users');
+        const [users, projDetail] = await Promise.all([
+          apiFetchPaginated(project.region, 'projects/' + project.id + '/users'),
+          apiFetch(project.region, 'projects/' + project.id)
+        ]);
         const me = findCurrentUser(users);
         project.role = me?.role || 'USER';
         project.members = users.filter(u => u.status === 'ACTIVE').length || project.members;
+        if (projDetail.rootId) project.rootId = projDetail.rootId;
+        if (projDetail.description) project.description = projDetail.description;
       } catch(e) { project.role = '?'; }
       done++;
       progressFill.style.width = Math.round((done / total) * 100) + '%';
@@ -659,7 +664,9 @@ function renderTable() {
     const regionLabel = REGION_LABELS[p.region] || p.location || '?';
     const dateStr = formatRelativeDate(p.updatedOn);
     const isRecent = p.updatedOn && (Date.now() - new Date(p.updatedOn).getTime()) < 7 * 24 * 60 * 60 * 1000;
-    const url = 'https://web.connect.trimble.com/projects/' + p.id + '/data';
+    const url = p.rootId
+      ? 'https://web.connect.trimble.com/projects/' + p.id + '/data/folder/' + p.rootId
+      : 'https://web.connect.trimble.com/projects/' + p.id;
     const tooltip = p.description ? ' data-tooltip="' + escapeHtml(p.description).replace(/"/g, '&quot;') + '"' : '';
     const currentBadge = isCurrent ? '<span class="badge-current">huidig</span>' : '';
 
@@ -761,7 +768,9 @@ function exportToExcel() {
     const role = p.role || '?';
     const date = p.updatedOn ? p.updatedOn.replace('T', ' ').substring(0, 16) : '';
     const region = REGION_LABELS[p.region] || p.location || '';
-    const url = 'https://web.connect.trimble.com/projects/' + p.id + '/data';
+    const url = p.rootId
+      ? 'https://web.connect.trimble.com/projects/' + p.id + '/data/folder/' + p.rootId
+      : 'https://web.connect.trimble.com/projects/' + p.id;
 
     xml += '  <Row>';
     xml += '<Cell><Data ss:Type="String">' + esc(isFav) + '</Data></Cell>';
