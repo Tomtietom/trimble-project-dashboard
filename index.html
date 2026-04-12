@@ -659,7 +659,7 @@ function renderTable() {
     const regionLabel = REGION_LABELS[p.region] || p.location || '?';
     const dateStr = formatRelativeDate(p.updatedOn);
     const isRecent = p.updatedOn && (Date.now() - new Date(p.updatedOn).getTime()) < 7 * 24 * 60 * 60 * 1000;
-    const url = 'https://web.connect.trimble.com/projects/' + p.id;
+    const url = 'https://web.connect.trimble.com/projects/' + p.id + '/data';
     const tooltip = p.description ? ' data-tooltip="' + escapeHtml(p.description).replace(/"/g, '&quot;') + '"' : '';
     const currentBadge = isCurrent ? '<span class="badge-current">huidig</span>' : '';
 
@@ -761,7 +761,7 @@ function exportToExcel() {
     const role = p.role || '?';
     const date = p.updatedOn ? p.updatedOn.replace('T', ' ').substring(0, 16) : '';
     const region = REGION_LABELS[p.region] || p.location || '';
-    const url = 'https://web.connect.trimble.com/projects/' + p.id;
+    const url = 'https://web.connect.trimble.com/projects/' + p.id + '/data';
 
     xml += '  <Row>';
     xml += '<Cell><Data ss:Type="String">' + esc(isFav) + '</Data></Cell>';
