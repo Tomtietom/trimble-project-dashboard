@@ -7,6 +7,7 @@
 <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAJZJREFUWEft1DEKwCAQRdHx/peOhYVFCi1cwEIS0E5m+PPrVTq5e/9e3T3T+34fp/tnJoCZBECSJEmSJEmSJGlJANd9v3rv+xGA+wSQJEmSJEmS/ncAz8eSJEmSJEmStCSA53NJkiRJkiRJSwJ4PpckSZIkSZK0JIDnc0mSJEmSJElLAng+lyRJkiRJkrQkgOdzSZIkSZL+ewBfYCl0Id3cvQAAAABJRU5ErkJggg==">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
+<script src="https://atfielt-extension-hub.tom-da0.workers.dev/client.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif; background: #f9f9f9; color: #222; min-height: 100vh; }
@@ -371,12 +372,86 @@ async function initExtensionMode() {
       else if (loc.includes('asia')) region = 'asia';
       lastRegion = region;
 
+      // ============================================================
+      //  At Fielt Extension Hub — toegangscontrole
+      // ============================================================
+      const HUB_REGION_URLS = {
+        'europe': 'https://app21.connect.trimble.com/tc/api/2.0',
+        'north america': 'https://app.connect.trimble.com/tc/api/2.0',
+        'asia': 'https://app31.connect.trimble.com/tc/api/2.0',
+      };
+      let hubEmail = null;
+      // Poging 1: /users/me direct op Trimble REST API
+      try {
+        const base = HUB_REGION_URLS[region] || HUB_REGION_URLS.europe;
+        const meResp = await fetch(base + '/users/me', { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
+        if (meResp.ok) {
+          const me = await meResp.json();
+          console.log('[Hub] /users/me keys:', Object.keys(me || {}));
+          hubEmail = me && (me.email || me.emailAddress || me.mail) || null;
+          if (hubEmail) console.log('[Hub] Email via /users/me:', hubEmail);
+        } else {
+          console.warn('[Hub] /users/me status:', meResp.status);
+        }
+      } catch(e) { console.warn('[Hub] /users/me faalde:', e.message); }
+
+      // Poging 2: JWT (parseJWT gaf al een poging, maar probeer meer velden)
+      if (!hubEmail) {
+        try {
+          const parts = token.split('.');
+          if (parts.length === 3) {
+            const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+            const padded = b64 + '==='.slice((b64.length + 3) % 4);
+            const payload = JSON.parse(atob(padded));
+            console.log('[Hub] JWT keys:', Object.keys(payload));
+            hubEmail = payload.email || payload.upn || payload.preferred_username ||
+                       payload.unique_name || payload.user_name || payload.nameid || null;
+            if (!hubEmail && payload.sub && payload.sub.indexOf('@') >= 0) hubEmail = payload.sub;
+          }
+        } catch(e) { console.warn('[Hub] JWT decode faalde:', e.message); }
+      }
+
+      // Fail-closed: geen hub client
+      if (!window.atfieltHub) {
+        console.error('[Hub] client.js niet geladen');
+        document.body.innerHTML =
+          '<div style="position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;font-family:sans-serif;">' +
+          '<div style="max-width:480px;padding:40px;text-align:center;border:2px solid #d4821a;border-radius:12px;background:#fef5eb;">' +
+          '<h1 style="margin:0 0 16px;color:#222;">Laadfout</h1>' +
+          '<p style="margin:0 0 20px;color:#444;">At Fielt Hub kon niet geladen worden. Controleer je internetverbinding en herlaad.</p>' +
+          '<p style="margin:0;color:#666;font-size:14px;">Contact: <a href="mailto:info@atfielt.nl" style="color:#d4821a;">info@atfielt.nl</a></p>' +
+          '</div></div>';
+        return;
+      }
+      if (!hubEmail) {
+        window.atfieltHub.showBlockScreen('Kon gebruikers-email niet uit Trimble lezen. Herlaad de extensie of neem contact op met At Fielt.');
+        return;
+      }
+      window.atfieltTcContext = {
+        userEmail: hubEmail,
+        projectId: tcProject && tcProject.id || null,
+        projectName: tcProject && tcProject.name || null,
+        projectRegion: region,
+      };
+      const hubResult = await window.atfieltHub.auth('project-dashboard');
+      if (!hubResult.allowed) {
+        window.atfieltHub.showBlockScreen(hubResult.reason || 'Geen toegang tot deze extensie.');
+        return;
+      }
+      console.log('[Hub] Toegang verleend voor', hubEmail);
+      // ============================================================
+
       // Toon nieuw-tabblad knop in extensie modus
       document.getElementById('btnNewTab').style.display = 'inline-block';
 
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('loadingScreen').style.display = 'flex';
-      try { await loadAllProjects(region); } catch(e) { console.error('[Dashboard] Load fout:', e); }
+      try {
+        await loadAllProjects(region);
+        if (window.atfieltHub) {
+          window.atfieltHub.logEvent('feature', { action: 'projects-loaded', region: region });
+        }
+      } catch(e) { console.error('[Dashboard] Load fout:', e); }
     }
   } catch(e) {
     console.error('[Dashboard] Init mislukt:', e.message);
