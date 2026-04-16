@@ -426,8 +426,55 @@ function parseJWT(token) {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
     const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-    return { email: payload.email || payload.unique_name || payload.preferred_username || null, sub: payload.sub || payload.oid || null, name: payload.name || payload.given_name || null };
+    return { email: payload.email || payload.unique_name || payload.preferred_username || null, sub: payload.sub || payload.oid || null, name: payload.name || payload.given_name || null, exp: payload.exp || null };
   } catch(e) { return null; }
+}
+
+// ============================================================
+//  TOKEN REFRESH
+// ============================================================
+function isTokenExpired() {
+  if (!currentUser || !currentUser.exp) return false; // geen exp = kan niet checken
+  return Date.now() >= (currentUser.exp * 1000) - 60000; // 60s marge
+}
+
+async function ensureValidToken(forceRefresh) {
+  if (!forceRefresh && !isTokenExpired()) return;
+  console.log('[Dashboard] Token ' + (forceRefresh ? 'refresh geforceerd (401)' : 'verlopen') + ', nieuw token ophalen...');
+
+  if (isEmbedded && tcAPI && tcAPI.extension) {
+    // Extensie-modus: vraag vers token aan Workspace API
+    try {
+      let newToken = null;
+      if (tcAPI.extension.getAccessToken) {
+        newToken = await Promise.race([
+          tcAPI.extension.getAccessToken(),
+          new Promise(function(_, rej) { setTimeout(function() { rej(new Error('timeout')); }, 5000); })
+        ]);
+      }
+      if (!newToken && tcAPI.extension.requestPermission) {
+        const result = await Promise.race([
+          tcAPI.extension.requestPermission('accesstoken'),
+          new Promise(function(_, rej) { setTimeout(function() { rej(new Error('timeout')); }, 5000); })
+        ]);
+        if (typeof result === 'string') newToken = result;
+        else if (result && result.token) newToken = result.token;
+        else if (result && result.accessToken) newToken = result.accessToken;
+      }
+      if (newToken && newToken.length > 20) {
+        token = newToken;
+        currentUser = parseJWT(token);
+        console.log('[Dashboard] Token vernieuwd, geldig tot ' + (currentUser.exp ? new Date(currentUser.exp * 1000).toLocaleTimeString() : '?'));
+        return;
+      }
+    } catch(e) {
+      console.warn('[Dashboard] Token refresh mislukt:', e.message);
+    }
+    throw new Error('Token verlopen en kan niet vernieuwd worden. Sluit de extensie en open deze opnieuw.');
+  } else {
+    // Handmatige modus
+    throw new Error('Token verlopen. Plak een nieuw token en klik op Laden.');
+  }
 }
 
 // ============================================================
@@ -487,16 +534,26 @@ function getApiUrl(region, endpoint) {
 }
 
 async function apiFetch(region, endpoint) {
-  const resp = await fetchWithTimeout(getApiUrl(region, endpoint), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
+  await ensureValidToken();
+  var resp = await fetchWithTimeout(getApiUrl(region, endpoint), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
+  if (resp.status === 401) {
+    await ensureValidToken(true);
+    resp = await fetchWithTimeout(getApiUrl(region, endpoint), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
+  }
   if (!resp.ok) throw new Error('API ' + resp.status + ': ' + endpoint);
   return resp.json();
 }
 
 async function apiFetchPaginated(region, endpoint, pageSize) {
+  await ensureValidToken();
   pageSize = pageSize || 100;
   const all = [], seen = new Set(); let start = 0;
   while (true) {
-    const resp = await fetchWithTimeout(getApiUrl(region, endpoint), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json', 'Range': 'items=' + start + '-' + (start + pageSize - 1) } });
+    var resp = await fetchWithTimeout(getApiUrl(region, endpoint), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json', 'Range': 'items=' + start + '-' + (start + pageSize - 1) } });
+    if (resp.status === 401) {
+      await ensureValidToken(true);
+      resp = await fetchWithTimeout(getApiUrl(region, endpoint), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json', 'Range': 'items=' + start + '-' + (start + pageSize - 1) } });
+    }
     if (!resp.ok) throw new Error('API ' + resp.status + ': ' + endpoint);
     const items = await resp.json();
     if (!Array.isArray(items) || items.length === 0) break;
@@ -508,9 +565,14 @@ async function apiFetchPaginated(region, endpoint, pageSize) {
 }
 
 async function fetchAllProjects(region) {
+  await ensureValidToken();
   const all = [], seen = new Set(); let offset = 0; const limit = 100;
   while (true) {
-    const resp = await fetchWithTimeout(getApiUrl(region, 'projects?offset=' + offset + '&limit=' + limit), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } }, 20000);
+    var resp = await fetchWithTimeout(getApiUrl(region, 'projects?offset=' + offset + '&limit=' + limit), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } }, 20000);
+    if (resp.status === 401) {
+      await ensureValidToken(true);
+      resp = await fetchWithTimeout(getApiUrl(region, 'projects?offset=' + offset + '&limit=' + limit), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } }, 20000);
+    }
     if (!resp.ok) throw new Error('API ' + resp.status + ': projects');
     const items = await resp.json();
     if (!Array.isArray(items) || items.length === 0) break;
