@@ -469,13 +469,25 @@ function startLoading() {
 // ============================================================
 //  API HELPERS
 // ============================================================
+function fetchWithTimeout(url, options, timeoutMs) {
+  timeoutMs = timeoutMs || 15000;
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, Object.assign({}, options, { signal: controller.signal }))
+    .catch(function(err) {
+      if (err.name === 'AbortError') throw new Error('Verbinding met server time-out (' + Math.round(timeoutMs / 1000) + 's). Controleer je internetverbinding of probeer het later opnieuw.');
+      throw err;
+    })
+    .finally(function() { clearTimeout(id); });
+}
+
 function getApiUrl(region, endpoint) {
   const key = REGION_KEYS[region] || 'eu';
   return PROXY_BASE + '/tc/' + key + '/' + endpoint.replace(/^\//, '');
 }
 
 async function apiFetch(region, endpoint) {
-  const resp = await fetch(getApiUrl(region, endpoint), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
+  const resp = await fetchWithTimeout(getApiUrl(region, endpoint), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
   if (!resp.ok) throw new Error('API ' + resp.status + ': ' + endpoint);
   return resp.json();
 }
@@ -484,7 +496,7 @@ async function apiFetchPaginated(region, endpoint, pageSize) {
   pageSize = pageSize || 100;
   const all = [], seen = new Set(); let start = 0;
   while (true) {
-    const resp = await fetch(getApiUrl(region, endpoint), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json', 'Range': 'items=' + start + '-' + (start + pageSize - 1) } });
+    const resp = await fetchWithTimeout(getApiUrl(region, endpoint), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json', 'Range': 'items=' + start + '-' + (start + pageSize - 1) } });
     if (!resp.ok) throw new Error('API ' + resp.status + ': ' + endpoint);
     const items = await resp.json();
     if (!Array.isArray(items) || items.length === 0) break;
@@ -498,7 +510,7 @@ async function apiFetchPaginated(region, endpoint, pageSize) {
 async function fetchAllProjects(region) {
   const all = [], seen = new Set(); let offset = 0; const limit = 100;
   while (true) {
-    const resp = await fetch(getApiUrl(region, 'projects?offset=' + offset + '&limit=' + limit), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
+    const resp = await fetchWithTimeout(getApiUrl(region, 'projects?offset=' + offset + '&limit=' + limit), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } }, 20000);
     if (!resp.ok) throw new Error('API ' + resp.status + ': projects');
     const items = await resp.json();
     if (!Array.isArray(items) || items.length === 0) break;
@@ -524,6 +536,14 @@ async function loadAllProjects(selectedRegion, isRefresh) {
     if (!isRefresh) { updateStep(1, 'done', 'Verbonden' + (currentUser?.email ? ' als ' + currentUser.email : '')); }
     if (!isRefresh) { updateStep(2, 'active', 'Projecten ophalen...'); }
 
+    // Toon waarschuwing als laden te lang duurt
+    const slowTimer = !isRefresh ? setTimeout(function() {
+      const errorEl = document.getElementById('loadingError');
+      errorEl.style.display = '';
+      errorEl.innerHTML = '&#9888; Dit duurt langer dan verwacht. Mogelijk is de server niet bereikbaar vanuit je netwerk. Even geduld of probeer opnieuw.';
+      document.getElementById('btnFallback').style.display = '';
+    }, 20000) : null;
+
     const seenIds = new Set();
     for (const region of regionsToFetch) {
       try {
@@ -537,17 +557,27 @@ async function loadAllProjects(selectedRegion, isRefresh) {
       } catch(e) { console.warn('Regio ' + region + ' mislukt:', e.message); }
     }
 
+    if (slowTimer) clearTimeout(slowTimer);
+
     if (projects.length === 0) throw new Error('Geen projecten gevonden.');
-    if (!isRefresh) { updateStep(2, 'done', projects.length + ' projecten gevonden'); updateStep(3, 'active', 'Rollen controleren...'); }
+    if (!isRefresh) {
+      // Verberg eventuele slow-warning
+      document.getElementById('loadingError').style.display = 'none';
+      document.getElementById('btnFallback').style.display = 'none';
+      updateStep(2, 'done', projects.length + ' projecten gevonden');
+      updateStep(3, 'active', 'Rollen controleren...');
+    }
 
     showDashboard();
     await loadRolesProgressively();
     if (!isRefresh) { updateStep(3, 'done', 'Rollen geladen'); }
   } catch(err) {
+    if (slowTimer) clearTimeout(slowTimer);
     console.error('Laden mislukt:', err);
     if (!isRefresh) {
+      updateStep(2, 'error', 'Projecten ophalen mislukt');
       const errorEl = document.getElementById('loadingError');
-      errorEl.style.display = ''; errorEl.innerHTML = '<strong>Fout:</strong> ' + err.message;
+      errorEl.style.display = ''; errorEl.innerHTML = '<strong>Fout:</strong> ' + escapeHtml(err.message) + '<br><small>Tip: controleer of je netwerk toegang heeft tot externe servers, of probeer het later opnieuw.</small>';
       document.getElementById('btnFallback').style.display = '';
     }
   }
