@@ -36,3 +36,12 @@ Wacht 1-3 min op GitHub Pages rebuild, dan verifieer:
 - **Hub URL**: https://atfielt-extension-hub.tom-da0.workers.dev
 - **Admin dashboard**: https://atfielt-extension-hub.tom-da0.workers.dev/admin
 - **Bijzonderheid**: deze extensie gebruikt een eigen proxy (tc-proxy.tom-da0.workers.dev) voor de meeste API-calls, maar roept Trimble `/users/me` direct aan (via client.js `check()`)
+
+## Token-refresh patroon (2026-04-17)
+
+Alle API-calls gaan via `apiFetch()` / `apiFetchPaginated()` / `fetchAllProjects()`. Deze gebruiken:
+- **`fetchWithTimeout()`** — wrapt `fetch()` met 15-20s timeout via `AbortController`
+- **`ensureValidToken()`** — checkt JWT `exp` claim (via `parseJWT()`, uitgebreid met `exp`) en refresht het token via `tcAPI.extension.getAccessToken()` als het verlopen is (60s marge)
+- **401-retry** — bij 401 response wordt het token vernieuwd en de call herhaald
+
+**Niet verwijderen of omzeilen.** JWT-tokens verlopen na ~1-2 uur; zonder deze helpers hangt de app voor eindgebruikers die het paneel lang open laten staan. Ditzelfde patroon is ook toegepast in tc-viewer, trimble-rechten-viewer en trimble-project-upload (daar met prefix `_` zoals `_ensureValidToken`).
