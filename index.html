@@ -349,7 +349,7 @@ async function initExtensionMode() {
     if (tcAPI.ui?.setMenu) tcAPI.ui.setMenu(menuDef);
     else if (tcAPI.extension?.setMenu) tcAPI.extension.setMenu(menuDef);
 
-    // Token ophalen
+    // Token ophalen — Methode 1: requestPermission
     if (!token) {
       try {
         const result = await Promise.race([tcAPI.extension.requestPermission('accesstoken'), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))]);
@@ -358,6 +358,17 @@ async function initExtensionMode() {
         else if (result?.accessToken) token = result.accessToken;
       } catch(e) {}
     }
+    // Methode 2: wacht op token via event (kritiek voor doorstart vanuit cockpit)
+    if (!token) {
+      console.log('[Dashboard] Wachten op token via event...');
+      await new Promise((resolve) => {
+        const timeout = setTimeout(resolve, 5000);
+        const check = setInterval(() => {
+          if (token) { clearInterval(check); clearTimeout(timeout); resolve(); }
+        }, 200);
+      });
+    }
+    // Methode 3: getAccessToken fallback
     if (!token && tcAPI.extension?.getAccessToken) {
       try { const t = await tcAPI.extension.getAccessToken(); if (t && t.length > 20) token = t; } catch(e) {}
     }
