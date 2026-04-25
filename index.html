@@ -335,7 +335,11 @@ async function initExtensionMode() {
     const apiLib = await waitForWorkspaceAPI(10000);
     tcAPI = await apiLib.connect(window.parent, (event, data) => {
       if (data && (data.type === 'token' || event === 'extension.accessToken')) {
-        const t = (typeof data === 'string') ? data : (data.token || data.accessToken || null);
+        // Token kan in verschillende velden zitten afhankelijk van TC-versie
+        let t = null;
+        if (typeof data === 'string') t = data;
+        else t = data.token || data.accessToken
+          || (event === 'extension.accessToken' && typeof data.data === 'string' ? data.data : null);
         if (t && t.length > 20) token = t;
       }
     }, 15000);
