@@ -273,9 +273,20 @@ let isLoading = false;
 let lastRegion = 'europe';
 
 const PROXY_BASE = 'https://tc-proxy.tom-da0.workers.dev';
-const TC_REGIONS = { 'europe': 'https://app21.connect.trimble.com/tc/api/2.0', 'north america': 'https://app.connect.trimble.com/tc/api/2.0', 'asia': 'https://app31.connect.trimble.com/tc/api/2.0' };
 const REGION_KEYS = { 'europe': 'eu', 'north america': 'us', 'asia': 'ap' };
 const REGION_LABELS = { 'europe': 'EU', 'north america': 'NA', 'asia': 'AP' };
+const REGION_NAMES = Object.keys(REGION_KEYS);
+
+// Timeouts en retry-config — alle in ms tenzij anders vermeld
+const DEFAULT_TIMEOUT_MS = 15000;
+const PROJECTS_TIMEOUT_MS = 20000;
+const TOKEN_REQUEST_TIMEOUT_MS = 5000;
+const TOKEN_EXPIRY_MARGIN_MS = 60000;
+const SLOW_LOAD_WARNING_MS = 20000;
+const PAGE_SIZE = 100;
+const MAX_PARALLEL_ROLES = 5;
+const RETRY_BACKOFF_MS = [1000, 4000, 16000];
+const MAX_429_WAIT_MS = 60000;
 
 // ============================================================
 //  FAVORIETEN
@@ -385,28 +396,10 @@ async function initExtensionMode() {
       else if (tcAPI.extension?.setMenu) tcAPI.extension.setMenu(menuDef);
     }
 
-    // Token ophalen — Methode 1: requestPermission
+    // Token ophalen — kritiek voor doorstart vanuit cockpit, daarom event-wait toegestaan
     if (!token) {
-      try {
-        const result = await Promise.race([tcAPI.extension.requestPermission('accesstoken'), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))]);
-        if (typeof result === 'string' && result.length > 20) token = result;
-        else if (result?.token) token = result.token;
-        else if (result?.accessToken) token = result.accessToken;
-      } catch(e) {}
-    }
-    // Methode 2: wacht op token via event (kritiek voor doorstart vanuit cockpit)
-    if (!token) {
-      console.log('[Dashboard] Wachten op token via event...');
-      await new Promise((resolve) => {
-        const timeout = setTimeout(resolve, 5000);
-        const check = setInterval(() => {
-          if (token) { clearInterval(check); clearTimeout(timeout); resolve(); }
-        }, 200);
-      });
-    }
-    // Methode 3: getAccessToken fallback
-    if (!token && tcAPI.extension?.getAccessToken) {
-      try { const t = await tcAPI.extension.getAccessToken(); if (t && t.length > 20) token = t; } catch(e) {}
+      const t = await getTokenFromExtension({ allowEventWait: true });
+      if (t) token = t;
     }
 
     if (token) {
@@ -482,11 +475,73 @@ function parseJWT(token) {
 }
 
 // ============================================================
+//  TOKEN OPHALEN UIT WORKSPACE API
+// ============================================================
+// Trekt een token-string uit de verschillende vormen die TC kan teruggeven.
+// Geeft null terug als er niets bruikbaars in zit.
+function extractToken(result) {
+  let t = null;
+  if (typeof result === 'string') t = result;
+  else if (result && result.token) t = result.token;
+  else if (result && result.accessToken) t = result.accessToken;
+  return (t && t.length > 20) ? t : null;
+}
+
+// Probeert achtereenvolgens drie methoden om een token van de extensie API te krijgen.
+// Retourneert het token-string of null. Werpt geen errors — caller bepaalt het gedrag.
+//
+//   opts.allowEventWait — sta event-based polling toe (alleen tijdens init,
+//                         waar het globale `token` nog null is en via de
+//                         WorkspaceAPI-listener gevuld kan worden).
+async function getTokenFromExtension(opts) {
+  opts = opts || {};
+  if (!tcAPI || !tcAPI.extension) return null;
+
+  // Methode 1: requestPermission
+  if (tcAPI.extension.requestPermission) {
+    try {
+      const result = await Promise.race([
+        tcAPI.extension.requestPermission('accesstoken'),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), TOKEN_REQUEST_TIMEOUT_MS))
+      ]);
+      const t = extractToken(result);
+      if (t) return t;
+    } catch(e) { /* probeer volgende methode */ }
+  }
+
+  // Methode 2: wacht op token via event (alleen tijdens init — listener vult globale `token`)
+  if (opts.allowEventWait) {
+    console.log('[Dashboard] Wachten op token via event...');
+    await new Promise((resolve) => {
+      const timeoutId = setTimeout(resolve, TOKEN_REQUEST_TIMEOUT_MS);
+      const intervalId = setInterval(() => {
+        if (token) { clearInterval(intervalId); clearTimeout(timeoutId); resolve(); }
+      }, 200);
+    });
+    if (token) return token;
+  }
+
+  // Methode 3: getAccessToken
+  if (tcAPI.extension.getAccessToken) {
+    try {
+      const result = await Promise.race([
+        tcAPI.extension.getAccessToken(),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), TOKEN_REQUEST_TIMEOUT_MS))
+      ]);
+      const t = extractToken(result);
+      if (t) return t;
+    } catch(e) { /* uit de opties */ }
+  }
+
+  return null;
+}
+
+// ============================================================
 //  TOKEN REFRESH
 // ============================================================
 function isTokenExpired() {
   if (!currentUser || !currentUser.exp) return false; // geen exp = kan niet checken
-  return Date.now() >= (currentUser.exp * 1000) - 60000; // 60s marge
+  return Date.now() >= (currentUser.exp * 1000) - TOKEN_EXPIRY_MARGIN_MS;
 }
 
 async function ensureValidToken(forceRefresh) {
@@ -494,36 +549,15 @@ async function ensureValidToken(forceRefresh) {
   console.log('[Dashboard] Token ' + (forceRefresh ? 'refresh geforceerd (401)' : 'verlopen') + ', nieuw token ophalen...');
 
   if (isEmbedded && tcAPI && tcAPI.extension) {
-    // Extensie-modus: vraag vers token aan Workspace API
-    try {
-      let newToken = null;
-      if (tcAPI.extension.getAccessToken) {
-        newToken = await Promise.race([
-          tcAPI.extension.getAccessToken(),
-          new Promise(function(_, rej) { setTimeout(function() { rej(new Error('timeout')); }, 5000); })
-        ]);
-      }
-      if (!newToken && tcAPI.extension.requestPermission) {
-        const result = await Promise.race([
-          tcAPI.extension.requestPermission('accesstoken'),
-          new Promise(function(_, rej) { setTimeout(function() { rej(new Error('timeout')); }, 5000); })
-        ]);
-        if (typeof result === 'string') newToken = result;
-        else if (result && result.token) newToken = result.token;
-        else if (result && result.accessToken) newToken = result.accessToken;
-      }
-      if (newToken && newToken.length > 20) {
-        token = newToken;
-        currentUser = parseJWT(token);
-        console.log('[Dashboard] Token vernieuwd, geldig tot ' + (currentUser.exp ? new Date(currentUser.exp * 1000).toLocaleTimeString() : '?'));
-        return;
-      }
-    } catch(e) {
-      console.warn('[Dashboard] Token refresh mislukt:', e.message);
+    const newToken = await getTokenFromExtension({ allowEventWait: false });
+    if (newToken) {
+      token = newToken;
+      currentUser = parseJWT(token);
+      console.log('[Dashboard] Token vernieuwd, geldig tot ' + (currentUser?.exp ? new Date(currentUser.exp * 1000).toLocaleTimeString() : '?'));
+      return;
     }
     throw new Error('Token verlopen en kan niet vernieuwd worden. Sluit de extensie en open deze opnieuw.');
   } else {
-    // Handmatige modus
     throw new Error('Token verlopen. Plak een nieuw token en klik op Laden.');
   }
 }
@@ -568,7 +602,7 @@ function startLoading() {
 //  API HELPERS
 // ============================================================
 function fetchWithTimeout(url, options, timeoutMs) {
-  timeoutMs = timeoutMs || 15000;
+  timeoutMs = timeoutMs || DEFAULT_TIMEOUT_MS;
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   return fetch(url, Object.assign({}, options, { signal: controller.signal }))
@@ -584,51 +618,105 @@ function getApiUrl(region, endpoint) {
   return PROXY_BASE + '/tc/' + key + '/' + endpoint.replace(/^\//, '');
 }
 
-async function apiFetch(region, endpoint) {
+// Parsed het totaal-getal uit een Content-Range header.
+// Accepteert zowel "items 0-99/500" als "items=0-99/500" (en andere whitespace-varianten).
+// Retourneert null als de header ontbreekt of niet matcht.
+function parseContentRangeTotal(cr) {
+  if (!cr) return null;
+  const m = cr.match(/(\d+)\s*-\s*(\d+)\s*\/\s*(\d+)/);
+  return m ? parseInt(m[3], 10) : null;
+}
+
+// Parsed Retry-After (seconds of HTTP-date) naar ms. Begrensd op MAX_429_WAIT_MS.
+function parseRetryAfter(header) {
+  if (!header) return 1000;
+  const n = parseInt(header, 10);
+  if (!isNaN(n)) return Math.min(n * 1000, MAX_429_WAIT_MS);
+  const d = Date.parse(header);
+  if (!isNaN(d)) return Math.min(Math.max(0, d - Date.now()), MAX_429_WAIT_MS);
+  return 1000;
+}
+
+// Lage-niveau API-fetch met token-handling en retries:
+// - 401: vernieuw token via ensureValidToken(true) en retry één keer
+// - 429: respecteer Retry-After header, retry één keer
+// - 5xx: exponential backoff via RETRY_BACKOFF_MS (max 3 retries)
+// - 4xx (overig) of laatste 5xx: throw met API-status
+async function apiFetchRaw(region, endpoint, opts) {
+  opts = opts || {};
+  const extraHeaders = opts.extraHeaders || {};
+  const timeoutMs = opts.timeoutMs || DEFAULT_TIMEOUT_MS;
+  const url = getApiUrl(region, endpoint);
+
   await ensureValidToken();
-  var resp = await fetchWithTimeout(getApiUrl(region, endpoint), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
+  const buildOptions = () => ({
+    headers: Object.assign(
+      { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' },
+      extraHeaders
+    )
+  });
+
+  let resp = await fetchWithTimeout(url, buildOptions(), timeoutMs);
+
   if (resp.status === 401) {
     await ensureValidToken(true);
-    resp = await fetchWithTimeout(getApiUrl(region, endpoint), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } });
+    resp = await fetchWithTimeout(url, buildOptions(), timeoutMs);
   }
+
+  if (resp.status === 429) {
+    const waitMs = parseRetryAfter(resp.headers.get('Retry-After'));
+    console.warn('[Dashboard] 429 Rate limited, retry over ' + waitMs + 'ms');
+    await new Promise(r => setTimeout(r, waitMs));
+    resp = await fetchWithTimeout(url, buildOptions(), timeoutMs);
+  }
+
+  let backoffIdx = 0;
+  while (resp.status >= 500 && resp.status < 600 && backoffIdx < RETRY_BACKOFF_MS.length) {
+    const wait = RETRY_BACKOFF_MS[backoffIdx++];
+    console.warn('[Dashboard] ' + resp.status + ' server-error, retry ' + backoffIdx + ' over ' + wait + 'ms');
+    await new Promise(r => setTimeout(r, wait));
+    resp = await fetchWithTimeout(url, buildOptions(), timeoutMs);
+  }
+
   if (!resp.ok) throw new Error('API ' + resp.status + ': ' + endpoint);
+  return resp;
+}
+
+async function apiFetch(region, endpoint) {
+  const resp = await apiFetchRaw(region, endpoint);
   return resp.json();
 }
 
 async function apiFetchPaginated(region, endpoint, pageSize) {
-  await ensureValidToken();
-  pageSize = pageSize || 100;
-  const all = [], seen = new Set(); let start = 0;
+  pageSize = pageSize || PAGE_SIZE;
+  const all = [], seen = new Set();
+  let start = 0;
   while (true) {
-    var resp = await fetchWithTimeout(getApiUrl(region, endpoint), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json', 'Range': 'items=' + start + '-' + (start + pageSize - 1) } });
-    if (resp.status === 401) {
-      await ensureValidToken(true);
-      resp = await fetchWithTimeout(getApiUrl(region, endpoint), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json', 'Range': 'items=' + start + '-' + (start + pageSize - 1) } });
-    }
-    if (!resp.ok) throw new Error('API ' + resp.status + ': ' + endpoint);
+    const resp = await apiFetchRaw(region, endpoint, {
+      extraHeaders: { 'Range': 'items=' + start + '-' + (start + pageSize - 1) }
+    });
     const items = await resp.json();
     if (!Array.isArray(items) || items.length === 0) break;
     for (const item of items) { if (!seen.has(item.id)) { seen.add(item.id); all.push(item); } }
-    const cr = resp.headers.get('Content-Range');
-    if (cr) { const m = cr.match(/items \d+-\d+\/(\d+)/); if (m) { start += items.length; if (start >= parseInt(m[1])) break; } else break; } else break;
+    const total = parseContentRangeTotal(resp.headers.get('Content-Range'));
+    start += items.length;
+    if (total !== null && start >= total) break;
+    if (items.length < pageSize) break;
   }
   return all;
 }
 
 async function fetchAllProjects(region) {
-  await ensureValidToken();
-  const all = [], seen = new Set(); let offset = 0; const limit = 100;
+  const all = [], seen = new Set();
+  let offset = 0;
   while (true) {
-    var resp = await fetchWithTimeout(getApiUrl(region, 'projects?offset=' + offset + '&limit=' + limit), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } }, 20000);
-    if (resp.status === 401) {
-      await ensureValidToken(true);
-      resp = await fetchWithTimeout(getApiUrl(region, 'projects?offset=' + offset + '&limit=' + limit), { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } }, 20000);
-    }
-    if (!resp.ok) throw new Error('API ' + resp.status + ': projects');
+    const resp = await apiFetchRaw(region, 'projects?offset=' + offset + '&limit=' + PAGE_SIZE, {
+      timeoutMs: PROJECTS_TIMEOUT_MS
+    });
     const items = await resp.json();
     if (!Array.isArray(items) || items.length === 0) break;
     for (const item of items) { if (!seen.has(item.id)) { seen.add(item.id); all.push(item); } }
-    if (items.length < limit) break;
+    if (items.length < PAGE_SIZE) break;
     offset += items.length;
   }
   return all;
@@ -641,7 +729,7 @@ async function loadAllProjects(selectedRegion, isRefresh) {
   if (isLoading) return;
   isLoading = true;
   projects = [];
-  const regionsToFetch = selectedRegion === 'all' ? Object.keys(TC_REGIONS) : [selectedRegion];
+  const regionsToFetch = selectedRegion === 'all' ? REGION_NAMES : [selectedRegion];
 
   try {
     if (!isRefresh) { updateStep(1, 'active', 'Verbinding maken...'); }
@@ -655,19 +743,23 @@ async function loadAllProjects(selectedRegion, isRefresh) {
       errorEl.style.display = '';
       errorEl.innerHTML = '&#9888; Dit duurt langer dan verwacht. Mogelijk is de server niet bereikbaar vanuit je netwerk. Even geduld of probeer opnieuw.';
       document.getElementById('btnFallback').style.display = '';
-    }, 20000) : null;
+    }, SLOW_LOAD_WARNING_MS) : null;
 
     const seenIds = new Set();
-    for (const region of regionsToFetch) {
-      try {
-        const regionProjects = await fetchAllProjects(region);
-        for (const p of regionProjects) {
-          if (!seenIds.has(p.id)) {
-            seenIds.add(p.id);
-            projects.push({ id: p.id, name: p.name || 'Naamloos', members: p.usersCount || 0, updatedOn: p.updatedOn || p.modifiedOn || null, location: p.location || region, region: region, role: null, rootId: p.rootId || null, description: p.description || '', _regionKey: REGION_KEYS[region] || 'eu' });
-          }
+    const settled = await Promise.allSettled(regionsToFetch.map(r => fetchAllProjects(r)));
+    for (let i = 0; i < settled.length; i++) {
+      const region = regionsToFetch[i];
+      const result = settled[i];
+      if (result.status !== 'fulfilled') {
+        console.warn('Regio ' + region + ' mislukt:', result.reason?.message || result.reason);
+        continue;
+      }
+      for (const p of result.value) {
+        if (!seenIds.has(p.id)) {
+          seenIds.add(p.id);
+          projects.push({ id: p.id, name: p.name || 'Naamloos', members: p.usersCount || 0, updatedOn: p.updatedOn || p.modifiedOn || null, location: p.location || region, region: region, role: null, rootId: p.rootId || null, description: p.description || '', _regionKey: REGION_KEYS[region] || 'eu' });
         }
-      } catch(e) { console.warn('Regio ' + region + ' mislukt:', e.message); }
+      }
     }
 
     if (slowTimer) clearTimeout(slowTimer);
@@ -701,7 +793,7 @@ async function loadAllProjects(selectedRegion, isRefresh) {
 //  ROLLEN PROGRESSIEF LADEN
 // ============================================================
 async function loadRolesProgressively() {
-  const PARALLEL = 5; let done = 0; const total = projects.length;
+  let done = 0; const total = projects.length;
   const progressBar = document.getElementById('progressBar');
   const progressFill = document.getElementById('progressFill');
   const progressPct = document.getElementById('progressPct');
@@ -728,7 +820,7 @@ async function loadRolesProgressively() {
       updateStats();
     })();
     executing.add(task); task.finally(() => executing.delete(task));
-    if (executing.size >= PARALLEL) await Promise.race(executing);
+    if (executing.size >= MAX_PARALLEL_ROLES) await Promise.race(executing);
   }
   await Promise.all(executing);
   progressBar.style.display = 'none';
